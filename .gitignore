@@ -1,0 +1,7 @@
+.qtenvrc
+lab3-kickstarter_dbg
+out/
+results/
+lab3-kickstarter
+Makefile
+.settings/
