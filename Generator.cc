@@ -1,28 +1,29 @@
 #ifndef GENERATOR
 #define GENERATOR
 
-#include <string.h>
 #include <omnetpp.h>
+#include <string.h>
 
 using namespace omnetpp;
 
 class Generator : public cSimpleModule {
 private:
-    cMessage *sendMsgEvent;
+    cMessage* sendMsgEvent;
     cStdDev transmissionStats;
+
 public:
     Generator();
     virtual ~Generator();
+
 protected:
     virtual void initialize();
     virtual void finish();
-    virtual void handleMessage(cMessage *msg);
+    virtual void handleMessage(cMessage* msg);
 };
 Define_Module(Generator);
 
 Generator::Generator() {
     sendMsgEvent = NULL;
-
 }
 
 Generator::~Generator() {
@@ -40,10 +41,10 @@ void Generator::initialize() {
 void Generator::finish() {
 }
 
-void Generator::handleMessage(cMessage *msg) {
+void Generator::handleMessage(cMessage* msg) {
 
     // create new packet
-    cPacket *pkt = new cPacket("packet");
+    cPacket* pkt = new cPacket("packet");
     pkt->setByteLength(par("packetByteSize"));
     // send to the output
     send(pkt, "out");

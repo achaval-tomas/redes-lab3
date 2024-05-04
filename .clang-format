@@ -1,0 +1,3 @@
+BasedOnStyle: WebKit
+MaxEmptyLinesToKeep: 2
+BreakBeforeBraces: Attach

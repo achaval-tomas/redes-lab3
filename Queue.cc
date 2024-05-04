@@ -1,25 +1,27 @@
 #ifndef QUEUE
 #define QUEUE
 
-#include <string.h>
 #include <omnetpp.h>
+#include <string.h>
 
 using namespace omnetpp;
 
-class Queue: public cSimpleModule {
+class Queue : public cSimpleModule {
 private:
     cQueue buffer;
-    cMessage *endServiceEvent;
+    cMessage* endServiceEvent;
     simtime_t serviceTime;
     cOutVector bufferSizeVector;
     cOutVector packetDropVector;
+
 public:
     Queue();
     virtual ~Queue();
+
 protected:
     virtual void initialize();
     virtual void finish();
-    virtual void handleMessage(cMessage *msg);
+    virtual void handleMessage(cMessage* msg);
 };
 
 Define_Module(Queue);
@@ -42,14 +44,13 @@ void Queue::initialize() {
 void Queue::finish() {
 }
 
-void Queue::handleMessage(cMessage *msg) {
-
+void Queue::handleMessage(cMessage* msg) {
     // if msg is signaling an endServiceEvent
     if (msg == endServiceEvent) {
         // if packet in buffer, send next one
         if (!buffer.isEmpty()) {
             // dequeue packet
-            cPacket *pkt = (cPacket*) buffer.pop();
+            cPacket* pkt = (cPacket*)buffer.pop();
             // send packet
             send(pkt, "out");
             // start new service
