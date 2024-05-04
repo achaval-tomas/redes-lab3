@@ -1,7 +1,7 @@
 .qtenvrc
-lab3-kickstarter_dbg
+lab3_dbg
 out/
 results/
-lab3-kickstarter
+lab3
 Makefile
 .settings/
