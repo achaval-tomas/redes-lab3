@@ -9,25 +9,24 @@ using namespace omnetpp;
 class Queue : public cSimpleModule {
 private:
     cQueue buffer;
-    cMessage* endServiceEvent;
+    cMessage* endServiceEvent = NULL;
     simtime_t serviceTime;
     cOutVector bufferSizeVector;
     cOutVector packetDropVector;
 
 public:
     Queue();
-    virtual ~Queue();
+    ~Queue() override;
 
 protected:
-    virtual void initialize();
-    virtual void finish();
-    virtual void handleMessage(cMessage* msg);
+    void initialize() override;
+    void finish() override;
+    void handleMessage(cMessage* msg) override;
 };
 
 Define_Module(Queue);
 
 Queue::Queue() {
-    endServiceEvent = NULL;
 }
 
 Queue::~Queue() {
@@ -50,7 +49,7 @@ void Queue::handleMessage(cMessage* msg) {
         // if packet in buffer, send next one
         if (!buffer.isEmpty()) {
             // dequeue packet
-            cPacket* pkt = (cPacket*)buffer.pop();
+            cPacket* pkt = dynamic_cast<cPacket*>(buffer.pop());
             // send packet
             send(pkt, "out");
             // start new service

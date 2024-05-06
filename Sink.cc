@@ -13,12 +13,12 @@ private:
 
 public:
     Sink();
-    virtual ~Sink();
+    ~Sink() override;
 
 protected:
-    virtual void initialize();
-    virtual void finish();
-    virtual void handleMessage(cMessage* msg);
+    void initialize() override;
+    void finish() override;
+    void handleMessage(cMessage* msg) override;
 };
 
 Define_Module(Sink);
