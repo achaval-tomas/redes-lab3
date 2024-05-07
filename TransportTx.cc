@@ -9,12 +9,6 @@
 #include <omnetpp.h>
 #include <string.h>
 
-enum PacketKind {
-    Data,
-    Feedback,
-    Timeout,
-};
-
 enum PacketStatus {
     Ready,
     Sent,
@@ -73,11 +67,11 @@ void TransportTx::finish() {
 void TransportTx::handleMessage(cMessage* msg) {
     if (msg == endServiceEvent) {
         handleEndServiceMessage(msg);
-    } else if (msg->getKind() == PacketKind::Data) {
+    } else if (dynamic_cast<DataPkt*>(msg)) {
         handleDataPacket(dynamic_cast<DataPkt*>(msg));
-    } else if (msg->getKind() == PacketKind::Feedback) {
+    } else if (dynamic_cast<FeedbackPkt*>(msg)) {
         handleFeedbackPacket(dynamic_cast<FeedbackPkt*>(msg));
-    } else if (msg->getKind() == PacketKind::Timeout) {
+    } else if (dynamic_cast<TimeoutMsg*>(msg)) {
         handleTimeoutMessage(dynamic_cast<TimeoutMsg*>(msg));
     }
 }
@@ -111,7 +105,7 @@ void TransportTx::handleDataPacket(DataPkt* pkt) {
         auto seqNumber = windowStart + buffer.size();
         pkt->setSeqNumber(seqNumber);
 
-        auto timeoutMsg = new TimeoutMsg("timeout", PacketKind::Timeout);
+        auto timeoutMsg = new TimeoutMsg("timeout");
         scheduleAt(simTime() + par("timeoutTime"), timeoutMsg);
 
         buffer.push_back(DataPktWithStatus { pkt, PacketStatus::Ready });
