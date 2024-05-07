@@ -73,6 +73,8 @@ void TransportTx::handleMessage(cMessage* msg) {
         handleFeedbackPacket(dynamic_cast<FeedbackPkt*>(msg));
     } else if (dynamic_cast<TimeoutMsg*>(msg)) {
         handleTimeoutMessage(dynamic_cast<TimeoutMsg*>(msg));
+    } else {
+        std::cerr << "Error TransportTx: unknown packet" << std::endl;
     }
 }
 
