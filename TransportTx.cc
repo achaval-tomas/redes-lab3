@@ -41,7 +41,7 @@ protected:
     void handleMessage(cMessage* msg) override;
 
 private:
-    void handleEndServiceMessage(cMessage* msg);
+    void handleEndServiceMessage();
     void handleDataPacket(DataPkt* pkt);
     void handleFeedbackPacket(FeedbackPkt* pkt);
     void trySlideWindow();
@@ -59,6 +59,8 @@ TransportTx::~TransportTx() {
 void TransportTx::initialize() {
     endServiceEvent = new cMessage("endService");
     scheduleAt(simTime(), endServiceEvent);
+    // MAYBE: Dynamically adjust window size
+    windowSize = par("windowSize");
 }
 
 void TransportTx::finish() {
@@ -66,7 +68,7 @@ void TransportTx::finish() {
 
 void TransportTx::handleMessage(cMessage* msg) {
     if (msg == endServiceEvent) {
-        handleEndServiceMessage(msg);
+        handleEndServiceMessage();
     } else if (dynamic_cast<DataPkt*>(msg)) {
         handleDataPacket(dynamic_cast<DataPkt*>(msg));
     } else if (dynamic_cast<FeedbackPkt*>(msg)) {
@@ -78,7 +80,7 @@ void TransportTx::handleMessage(cMessage* msg) {
     }
 }
 
-void TransportTx::handleEndServiceMessage(cMessage* msg) {
+void TransportTx::handleEndServiceMessage() {
     if (inFlightPackets >= windowSize) {
         return;
     }
@@ -92,6 +94,7 @@ void TransportTx::handleEndServiceMessage(cMessage* msg) {
 
     send(pktToSend->pkt, "toOut$o");
     pktToSend->status = PacketStatus::Sent;
+    inFlightPackets++;
 
     serviceTime = pktToSend->pkt->getDuration();
     // TODO: make sure that omnet always delivers scheduled self-messages.
@@ -111,12 +114,18 @@ void TransportTx::handleDataPacket(DataPkt* pkt) {
         scheduleAt(simTime() + par("timeoutTime"), timeoutMsg);
 
         buffer.push_back(DataPktWithStatus { pkt, PacketStatus::Ready });
+
+        if (!endServiceEvent->isScheduled()) {
+            scheduleAt(simTime(), endServiceEvent);
+        }
     }
 }
 
 // From Receiver
 void TransportTx::handleFeedbackPacket(FeedbackPkt* pkt) {
     auto ackNumber = pkt->getAckNumber();
+    delete pkt;
+
     if (ackNumber < windowStart) {
         return;
     }
@@ -129,8 +138,13 @@ void TransportTx::handleFeedbackPacket(FeedbackPkt* pkt) {
 
     // MAYBE: windowSize = pkt->getWindowSize();
     buffer[pktIdx].status = PacketStatus::Acked;
+    inFlightPackets--;
 
     trySlideWindow();
+
+    if (!endServiceEvent->isScheduled()) {
+        scheduleAt(simTime(), endServiceEvent);
+    }
 }
 
 void TransportTx::trySlideWindow() {
@@ -151,6 +165,8 @@ void TransportTx::trySlideWindow() {
 
 void TransportTx::handleTimeoutMessage(TimeoutMsg* msg) {
     auto seqNumber = msg->getSeqNumber();
+    delete msg;
+
     if (seqNumber < windowStart) {
         return;
     }
@@ -164,9 +180,13 @@ void TransportTx::handleTimeoutMessage(TimeoutMsg* msg) {
     auto packet = &buffer[pktIdx];
     if (packet->status != PacketStatus::Acked) {
         packet->status = PacketStatus::Ready;
-    }
+        assert(inFlightPackets != 0); // TODO: estar convencidos de que esto nunca pasa.
+        inFlightPackets--; // Asumimos que se perdio.
 
-    delete msg;
+        if (!endServiceEvent->isScheduled()) {
+            scheduleAt(simTime(), endServiceEvent);
+        }
+    }
 }
 
 #endif /* TRANSPORT_TX */
