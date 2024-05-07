@@ -87,7 +87,9 @@ void TransportTx::handleEndServiceMessage(cMessage* msg) {
         return;
     }
 
-    auto pktToSend = std::find_if(buffer.begin(), buffer.end(), [](auto p) { return p.status == PacketStatus::Ready; });
+    auto pktToSend = std::find_if(buffer.begin(), buffer.end(), [](const DataPktWithStatus& p) {
+        return p.status == PacketStatus::Ready;
+    });
     if (pktToSend == buffer.end()) {
         return;
     }
