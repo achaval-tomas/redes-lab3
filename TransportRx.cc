@@ -79,12 +79,10 @@ void TransportRx::handleEndServiceMessage() {
 
 // From TransportTx
 void TransportRx::handleDataPacket(DataPkt* pkt) {
-    if (buffer.size() >= par("bufferSize").intValue()) {
+    auto seqNumber = pkt->getSeqNumber();
+    if (seqNumber >= windowSize + windowStart) {
         delete pkt;
         this->bubble("packet dropped");
-    } else {
-        auto seqNumber = pkt->getSeqNumber();
-        if (seqNumber >= windowSize + windowStart) {
             return;
         }
 
@@ -100,7 +98,7 @@ void TransportRx::handleDataPacket(DataPkt* pkt) {
         if (!endServiceEvent->isScheduled()) {
             scheduleAt(simTime(), endServiceEvent);
         }
-    }
+    
 }
 
 #endif /* TRANSPORT_RX */
