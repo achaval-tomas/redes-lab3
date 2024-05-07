@@ -58,7 +58,7 @@ void TransportRx::handleMessage(cMessage* msg) {
     } else if (dynamic_cast<DataPkt*>(msg)) {
         handleDataPacket(dynamic_cast<DataPkt*>(msg));
     } else {
-        std::cerr << "Error TransportRx: unknown packet" << std::endl;
+        EV_ERROR << "[TRX] error TransportRx: unknown packet" << std::endl;
     }
 }
 
@@ -67,6 +67,9 @@ void TransportRx::handleEndServiceMessage() {
     if (pkt == nullptr) {
         return;
     }
+
+    EV_TRACE << "[TRX] sending packet " << pkt->getSeqNumber()
+             << " to sink and moving receive window one to the right" << std::endl;
 
     send(pkt, "toOut$o");
     buffer.pop_front();
@@ -80,21 +83,31 @@ void TransportRx::handleEndServiceMessage() {
 // From TransportTx
 void TransportRx::handleDataPacket(DataPkt* pkt) {
     auto seqNumber = pkt->getSeqNumber();
+
+    EV_TRACE << "[TRX] received data packet " << seqNumber << std::endl;
+
     if (seqNumber >= windowSize + windowStart) {
         delete pkt;
         this->bubble("packet dropped");
+        EV_INFO << "[TRX] packet dropped" << std::endl;
         return;
+    }
+
+    if (windowStart <= seqNumber) {
+        auto pktIndex = seqNumber - windowStart;
+        buffer[pktIndex] = pkt;
+        EV_TRACE << "[TRX] storing data packet " << seqNumber << std::endl;
     }
 
     auto feedback = new FeedbackPkt();
     feedback->setAckNumber(seqNumber);
     feedback->setWindowSize(windowSize);
-    send(feedback, "toApp");
 
-    if (windowStart <= seqNumber) {
-        auto pktIndex = seqNumber - windowStart;
-        buffer[pktIndex] = pkt;
-    }
+    auto name = "ack=" + std::to_string(seqNumber);
+    feedback->setName(name.c_str());
+
+    send(feedback, "toApp");
+    EV_TRACE << "[TRX] sending feedback packet for " << seqNumber << std::endl;
 
     if (!endServiceEvent->isScheduled()) {
         scheduleAt(simTime(), endServiceEvent);

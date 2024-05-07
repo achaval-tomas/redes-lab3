@@ -58,7 +58,6 @@ TransportTx::~TransportTx() {
 
 void TransportTx::initialize() {
     endServiceEvent = new cMessage("endService");
-    scheduleAt(simTime(), endServiceEvent);
     // MAYBE: Dynamically adjust window size
     windowSize = par("windowSize");
 }
@@ -76,14 +75,19 @@ void TransportTx::handleMessage(cMessage* msg) {
     } else if (dynamic_cast<TimeoutMsg*>(msg)) {
         handleTimeoutMessage(dynamic_cast<TimeoutMsg*>(msg));
     } else {
-        std::cerr << "Error TransportTx: unknown packet" << std::endl;
+        EV_ERROR << "Error TransportTx: unknown packet" << std::endl;
     }
 }
 
 void TransportTx::handleEndServiceMessage() {
+    EV_TRACE << "[TTX] trying to send a packet" << std::endl;
+
     if (inFlightPackets >= windowSize) {
+        EV_TRACE << "[TTX] window is full, skipping" << std::endl;
         return;
     }
+
+    EV_TRACE << "[TTX] searching for packet to send" << std::endl;
 
     auto pktToSend = std::find_if(buffer.begin(), buffer.end(), [](const DataPktWithStatus& p) {
         return p.status == PacketStatus::Ready;
@@ -91,6 +95,8 @@ void TransportTx::handleEndServiceMessage() {
     if (pktToSend == buffer.end()) {
         return;
     }
+
+    EV_TRACE << "[TTX] sending packet " << pktToSend->pkt->getSeqNumber() << std::endl;
 
     send(pktToSend->pkt, "toOut$o");
     pktToSend->status = PacketStatus::Sent;
@@ -103,12 +109,21 @@ void TransportTx::handleEndServiceMessage() {
 
 // From Generator
 void TransportTx::handleDataPacket(DataPkt* pkt) {
+    EV_TRACE << "[TTX] received new data packet " << std::endl;
+
     if (buffer.size() >= par("bufferSize").intValue()) {
+        EV_TRACE << "[TTX] buffer is full, dropping packet " << std::endl;
+
         delete pkt;
         this->bubble("packet dropped");
     } else {
         auto seqNumber = windowStart + buffer.size();
         pkt->setSeqNumber(seqNumber);
+
+        auto name = "seq=" + std::to_string(seqNumber);
+        pkt->setName(name.c_str());
+
+        EV_TRACE << "[TTX] assigned seq n° " << seqNumber << " to data packet" << std::endl;
 
         auto timeoutMsg = new TimeoutMsg("timeout");
         scheduleAt(simTime() + par("timeoutTime"), timeoutMsg);
@@ -126,19 +141,24 @@ void TransportTx::handleFeedbackPacket(FeedbackPkt* pkt) {
     auto ackNumber = pkt->getAckNumber();
     delete pkt;
 
+    EV_TRACE << "[TTX] received feedback packet for " << ackNumber << std::endl;
+
     if (ackNumber < windowStart) {
+        EV_INFO << "[TTX] packet " << ackNumber << " already acked" << std::endl;
         return;
     }
 
     auto pktIdx = ackNumber - windowStart;
     if (pktIdx >= windowSize || pktIdx >= buffer.size()) {
-        std::cerr << "pktIdx out of bounds (feedback packet)" << std::endl;
+        EV_ERROR << "[TTX] pktIdx out of bounds" << std::endl;
         return;
     }
 
     // MAYBE: windowSize = pkt->getWindowSize();
     buffer[pktIdx].status = PacketStatus::Acked;
     inFlightPackets--;
+
+    EV_TRACE << "[TTX] received ack for packet " << ackNumber << std::endl;
 
     trySlideWindow();
 
@@ -156,11 +176,16 @@ void TransportTx::trySlideWindow() {
         leadingAckedCount += 1;
     }
 
+    EV_TRACE << "[TTX] sliding window by " << leadingAckedCount << std::endl;
+
     for (auto i = 0; i < leadingAckedCount; ++i) {
         buffer.pop_front();
     }
 
     windowStart += leadingAckedCount;
+
+    EV_TRACE << "[TTX] new window is [" << windowStart << ", "
+             << windowStart + windowSize << ")" << std::endl;
 }
 
 void TransportTx::handleTimeoutMessage(TimeoutMsg* msg) {
@@ -173,12 +198,14 @@ void TransportTx::handleTimeoutMessage(TimeoutMsg* msg) {
 
     auto pktIdx = seqNumber - windowStart;
     if (pktIdx >= windowSize || pktIdx >= buffer.size()) {
-        std::cerr << "pktIdx out of bounds (timeout message)" << std::endl;
+        EV_ERROR << "[TTX] pktIdx out of bounds (timeout message)" << std::endl;
         return;
     }
 
     auto packet = &buffer[pktIdx];
     if (packet->status != PacketStatus::Acked) {
+        EV_TRACE << "[TTX] packet " << packet->pkt->getSeqNumber() << " timeout" << std::endl;
+
         packet->status = PacketStatus::Ready;
         assert(inFlightPackets != 0); // TODO: estar convencidos de que esto nunca pasa.
         inFlightPackets--; // Asumimos que se perdio.
