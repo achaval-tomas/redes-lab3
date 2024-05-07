@@ -83,22 +83,22 @@ void TransportRx::handleDataPacket(DataPkt* pkt) {
     if (seqNumber >= windowSize + windowStart) {
         delete pkt;
         this->bubble("packet dropped");
-            return;
-        }
+        return;
+    }
 
-        auto feedback = new FeedbackPkt();
-        feedback->setAckNumber(seqNumber);
-        feedback->setWindowSize(windowSize);
+    auto feedback = new FeedbackPkt();
+    feedback->setAckNumber(seqNumber);
+    feedback->setWindowSize(windowSize);
+    send(feedback, "toApp");
 
-        if (windowStart <= seqNumber) {
-            auto pktIndex = seqNumber - windowStart;
-            buffer[pktIndex] = pkt;
-        }
+    if (windowStart <= seqNumber) {
+        auto pktIndex = seqNumber - windowStart;
+        buffer[pktIndex] = pkt;
+    }
 
-        if (!endServiceEvent->isScheduled()) {
-            scheduleAt(simTime(), endServiceEvent);
-        }
-    
+    if (!endServiceEvent->isScheduled()) {
+        scheduleAt(simTime(), endServiceEvent);
+    }
 }
 
 #endif /* TRANSPORT_RX */
