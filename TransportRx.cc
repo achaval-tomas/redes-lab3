@@ -68,7 +68,7 @@ void TransportRx::handleEndServiceMessage() {
         return;
     }
 
-    send(pkt, "toApp");
+    send(pkt, "toOut$o");
     buffer.pop_front();
     buffer.push_back(nullptr);
     windowStart++;
