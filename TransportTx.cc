@@ -103,7 +103,6 @@ void TransportTx::handleEndServiceMessage() {
     inFlightPackets++;
 
     serviceTime = pktToSend->pkt->getDuration();
-    // TODO: make sure that omnet always delivers scheduled self-messages.
     scheduleAt(simTime() + serviceTime, endServiceEvent);
 }
 
@@ -116,23 +115,24 @@ void TransportTx::handleDataPacket(DataPkt* pkt) {
 
         delete pkt;
         this->bubble("packet dropped");
-    } else {
-        auto seqNumber = windowStart + buffer.size();
-        pkt->setSeqNumber(seqNumber);
+        return;
+    }
 
-        auto name = "seq=" + std::to_string(seqNumber);
-        pkt->setName(name.c_str());
+    auto seqNumber = windowStart + buffer.size();
+    pkt->setSeqNumber(seqNumber);
 
-        EV_TRACE << "[TTX] assigned seq n° " << seqNumber << " to data packet" << std::endl;
+    auto name = "seq=" + std::to_string(seqNumber);
+    pkt->setName(name.c_str());
 
-        auto timeoutMsg = new TimeoutMsg("timeout");
-        scheduleAt(simTime() + par("timeoutTime"), timeoutMsg);
+    EV_TRACE << "[TTX] assigned seq n° " << seqNumber << " to data packet" << std::endl;
 
-        buffer.push_back(DataPktWithStatus { pkt, PacketStatus::Ready });
+    auto timeoutMsg = new TimeoutMsg("timeout");
+    scheduleAt(simTime() + par("timeoutTime"), timeoutMsg);
 
-        if (!endServiceEvent->isScheduled()) {
-            scheduleAt(simTime(), endServiceEvent);
-        }
+    buffer.push_back(DataPktWithStatus { pkt, PacketStatus::Ready });
+
+    if (!endServiceEvent->isScheduled()) {
+        scheduleAt(simTime(), endServiceEvent);
     }
 }
 
