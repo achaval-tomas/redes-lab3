@@ -98,10 +98,17 @@ void TransportTx::handleEndServiceMessage() {
 
     EV_TRACE << "[TTX] sending packet " << pktToSend->pkt->getSeqNumber() << std::endl;
 
+    // Send packet
     send(pktToSend->pkt, "toOut$o");
     pktToSend->status = PacketStatus::Sent;
     inFlightPackets++;
 
+    // Start timeout
+    auto timeoutMsg = new TimeoutMsg("timeout");
+    timeoutMsg->setSeqNumber(pktToSend->pkt->getSeqNumber());
+    scheduleAt(simTime() + par("timeoutTime"), timeoutMsg);
+
+    // Schedule next end service event
     serviceTime = pktToSend->pkt->getDuration();
     scheduleAt(simTime() + serviceTime, endServiceEvent);
 }
@@ -125,10 +132,6 @@ void TransportTx::handleDataPacket(DataPkt* pkt) {
     pkt->setName(name.c_str());
 
     EV_TRACE << "[TTX] assigned seq n° " << seqNumber << " to data packet" << std::endl;
-
-    auto timeoutMsg = new TimeoutMsg("timeout");
-    timeoutMsg->setSeqNumber(seqNumber);
-    scheduleAt(simTime() + par("timeoutTime"), timeoutMsg);
 
     buffer.push_back(DataPktWithStatus { pkt, PacketStatus::Ready });
 
