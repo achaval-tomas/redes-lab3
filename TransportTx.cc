@@ -127,6 +127,7 @@ void TransportTx::handleDataPacket(DataPkt* pkt) {
     EV_TRACE << "[TTX] assigned seq n° " << seqNumber << " to data packet" << std::endl;
 
     auto timeoutMsg = new TimeoutMsg("timeout");
+    timeoutMsg->setSeqNumber(seqNumber);
     scheduleAt(simTime() + par("timeoutTime"), timeoutMsg);
 
     buffer.push_back(DataPktWithStatus { pkt, PacketStatus::Ready });
