@@ -15,6 +15,11 @@ enum PacketStatus {
     Acked,
 };
 
+enum CongestionStatus {
+    SlowStart,
+    AdditiveIncrease
+};
+
 struct DataPktWithStatus {
     DataPkt* pkt;
     PacketStatus status;
@@ -30,6 +35,9 @@ private:
     unsigned int windowStart = 0;
     unsigned int windowSize = 0;
     unsigned int inFlightPackets = 0;
+    CongestionStatus congStatus = CongestionStatus::SlowStart;
+    unsigned int ssthresh = UINT32_MAX;
+    double cwnd = 1.0;
 
 public:
     TransportTx();
@@ -81,6 +89,11 @@ void TransportTx::handleMessage(cMessage* msg) {
 
 void TransportTx::handleEndServiceMessage() {
     EV_TRACE << "[TTX] trying to send a packet" << std::endl;
+
+    if (inFlightPackets >= cwnd) {
+        EV_TRACE << "[TTX] congestion window is full (" << cwnd << "), skipping" << std::endl;
+        return;
+    }
 
     size_t i = 0;
     for (auto pkt : buffer) {
@@ -155,6 +168,23 @@ void TransportTx::handleFeedbackPacket(FeedbackPkt* pkt) {
 
     EV_TRACE << "[TTX] received feedback packet for " << ackNumber << std::endl;
 
+    switch (congStatus) {
+    case CongestionStatus::SlowStart:
+        cwnd += 1.0;
+        if (cwnd >= ssthresh) {
+            congStatus = CongestionStatus::AdditiveIncrease;
+        }
+        break;
+    case CongestionStatus::AdditiveIncrease:
+        cwnd += 1.0 / cwnd;
+        break;
+    default:
+        assert(false);
+        break;
+    }
+
+    EV_TRACE << "[TTX] cwnd:" << cwnd << std::endl;
+
     if (ackNumber < windowStart) {
         EV_INFO << "[TTX] packet " << ackNumber << " already acked" << std::endl;
         return;
@@ -167,8 +197,21 @@ void TransportTx::handleFeedbackPacket(FeedbackPkt* pkt) {
     }
 
     // MAYBE: windowSize = pkt->getWindowSize();
-    buffer[pktIdx].status = PacketStatus::Acked;
-    inFlightPackets--;
+    if (buffer[pktIdx].status != PacketStatus::Acked) {
+        // If a timeout occurred (*) and the packet was queued for retransmission,
+        // but a delayed ack arrived before we actually sent the retransmission,
+        // then we have already decremented inFlightPackets in the timeout handler,
+        // and therefore we must skip the subsequent decrement statement.
+        // In the case we have already retransmitted the packet but the delayed ack
+        // arrived, there is no problem because if a later ack arrives, we will ignore
+        // it, and thus inFlightPackets will not be decremented again.
+        // (*) if a timeout hasn't occurred for this packet, its status will be 'Sent'.
+        if (buffer[pktIdx].status == PacketStatus::Sent) {
+            inFlightPackets--;
+        }
+
+        buffer[pktIdx].status = PacketStatus::Acked;
+    }
 
     EV_TRACE << "[TTX] received ack for packet " << ackNumber << std::endl;
 
@@ -221,9 +264,15 @@ void TransportTx::handleTimeoutMessage(TimeoutMsg* msg) {
         return;
     }
 
+    assert(packet->pkt->getSeqNumber() == seqNumber);
+
     assert(packet->status != PacketStatus::Ready);
 
-    EV_TRACE << "[TTX] packet " << packet->pkt->getSeqNumber() << " timeout" << std::endl;
+    ssthresh = cwnd / 2;
+    cwnd = 1.0;
+    congStatus = CongestionStatus::SlowStart;
+
+    EV_TRACE << "[TTX] packet " << seqNumber << " timeout" << std::endl;
 
     packet->status = PacketStatus::Ready;
     assert(inFlightPackets != 0); // TODO: estar convencidos de que esto nunca pasa.
