@@ -199,10 +199,9 @@ void TransportTx::handleTimeoutMessage(TimeoutMsg* msg) {
     }
 
     auto pktIdx = seqNumber - windowStart;
-    if (pktIdx >= windowSize || pktIdx >= buffer.size()) {
-        EV_ERROR << "[TTX] pktIdx out of bounds (timeout message)" << std::endl;
-        return;
-    }
+
+    assert(pktIdx < windowSize);
+    assert(pktIdx < buffer.size());
 
     auto packet = &buffer[pktIdx];
     if (packet->status == PacketStatus::Acked) {
