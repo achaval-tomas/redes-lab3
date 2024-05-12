@@ -193,6 +193,7 @@ void TransportTx::handleTimeoutMessage(TimeoutMsg* msg) {
     delete msg;
 
     if (seqNumber < windowStart) {
+        // Packet already acked.
         return;
     }
 
@@ -203,16 +204,19 @@ void TransportTx::handleTimeoutMessage(TimeoutMsg* msg) {
     }
 
     auto packet = &buffer[pktIdx];
-    if (packet->status != PacketStatus::Acked) {
-        EV_TRACE << "[TTX] packet " << packet->pkt->getSeqNumber() << " timeout" << std::endl;
+    if (packet->status == PacketStatus::Acked) {
+        // Packet already acked.
+        return;
+    }
 
-        packet->status = PacketStatus::Ready;
-        assert(inFlightPackets != 0); // TODO: estar convencidos de que esto nunca pasa.
-        inFlightPackets--; // Asumimos que se perdio.
+    EV_TRACE << "[TTX] packet " << packet->pkt->getSeqNumber() << " timeout" << std::endl;
 
-        if (!endServiceEvent->isScheduled()) {
-            scheduleAt(simTime(), endServiceEvent);
-        }
+    packet->status = PacketStatus::Ready;
+    assert(inFlightPackets != 0); // TODO: estar convencidos de que esto nunca pasa.
+    inFlightPackets--; // Asumimos que se perdio.
+
+    if (!endServiceEvent->isScheduled()) {
+        scheduleAt(simTime(), endServiceEvent);
     }
 }
 
