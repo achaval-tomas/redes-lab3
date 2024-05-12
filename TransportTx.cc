@@ -39,6 +39,9 @@ private:
     unsigned int ssthresh = UINT32_MAX;
     double cwnd = 1.0;
 
+    cOutVector cwndVector;
+    cOutVector ssthreshVector;
+
 public:
     TransportTx();
     ~TransportTx() override;
@@ -68,6 +71,10 @@ void TransportTx::initialize() {
     endServiceEvent = new cMessage("endService");
     // MAYBE: Dynamically adjust window size
     windowSize = par("windowSize");
+    cwndVector.setName("cwnd");
+    ssthreshVector.setName("ssthresh");
+    cwndVector.record(cwnd);
+    ssthreshVector.record(ssthresh);
 }
 
 void TransportTx::finish() {
@@ -183,6 +190,8 @@ void TransportTx::handleFeedbackPacket(FeedbackPkt* pkt) {
         break;
     }
 
+    cwndVector.record(cwnd);
+
     EV_TRACE << "[TTX] cwnd:" << cwnd << std::endl;
 
     if (ackNumber < windowStart) {
@@ -271,6 +280,9 @@ void TransportTx::handleTimeoutMessage(TimeoutMsg* msg) {
     ssthresh = cwnd / 2;
     cwnd = 1.0;
     congStatus = CongestionStatus::SlowStart;
+
+    ssthreshVector.record(ssthresh);
+    cwndVector.record(cwnd);
 
     EV_TRACE << "[TTX] packet " << seqNumber << " timeout" << std::endl;
 
