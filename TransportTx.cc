@@ -82,24 +82,32 @@ void TransportTx::handleMessage(cMessage* msg) {
 void TransportTx::handleEndServiceMessage() {
     EV_TRACE << "[TTX] trying to send a packet" << std::endl;
 
-    if (inFlightPackets >= windowSize) {
+    size_t i = 0;
+    for (auto pkt : buffer) {
+        if (pkt.status == PacketStatus::Ready) {
+            break;
+        }
+        i++;
+    }
+
+    if (i == buffer.size()) {
+        EV_TRACE << "[TTX] no packet to send" << std::endl;
+        return;
+    }
+
+    if (i >= windowSize) {
         EV_TRACE << "[TTX] window is full, skipping" << std::endl;
         return;
     }
 
-    EV_TRACE << "[TTX] searching for packet to send" << std::endl;
-
-    auto pktToSend = std::find_if(buffer.begin(), buffer.end(), [](const DataPktWithStatus& p) {
-        return p.status == PacketStatus::Ready;
-    });
-    if (pktToSend == buffer.end()) {
-        return;
-    }
+    auto pktToSend = &buffer[i];
 
     EV_TRACE << "[TTX] sending packet " << pktToSend->pkt->getSeqNumber() << std::endl;
 
+    auto dupPkt = pktToSend->pkt->dup();
+
     // Send packet
-    send(pktToSend->pkt, "toOut$o");
+    send(dupPkt, "toOut$o");
     pktToSend->status = PacketStatus::Sent;
     inFlightPackets++;
 
@@ -109,7 +117,7 @@ void TransportTx::handleEndServiceMessage() {
     scheduleAt(simTime() + par("timeoutTime"), timeoutMsg);
 
     // Schedule next end service event
-    serviceTime = pktToSend->pkt->getDuration();
+    serviceTime = dupPkt->getDuration();
     scheduleAt(simTime() + serviceTime, endServiceEvent);
 }
 
@@ -183,6 +191,7 @@ void TransportTx::trySlideWindow() {
     EV_TRACE << "[TTX] sliding window by " << leadingAckedCount << std::endl;
 
     for (auto i = 0; i < leadingAckedCount; ++i) {
+        delete buffer.front().pkt;
         buffer.pop_front();
     }
 
@@ -211,6 +220,8 @@ void TransportTx::handleTimeoutMessage(TimeoutMsg* msg) {
         // Packet already acked.
         return;
     }
+
+    assert(packet->status != PacketStatus::Ready);
 
     EV_TRACE << "[TTX] packet " << packet->pkt->getSeqNumber() << " timeout" << std::endl;
 
