@@ -50,6 +50,10 @@ void TransportRx::initialize() {
 }
 
 void TransportRx::finish() {
+    for (auto pkt : buffer) {
+        delete pkt;
+    }
+    buffer.clear();
 }
 
 void TransportRx::handleMessage(cMessage* msg) {
@@ -95,8 +99,14 @@ void TransportRx::handleDataPacket(DataPkt* pkt) {
 
     if (windowStart <= seqNumber) {
         auto pktIndex = seqNumber - windowStart;
-        buffer[pktIndex] = pkt;
+        if (buffer[pktIndex] == nullptr) {
+            buffer[pktIndex] = pkt;
+        } else {
+            delete pkt;
+        }
         EV_TRACE << "[TRX] storing data packet " << seqNumber << std::endl;
+    } else {
+        delete pkt;
     }
 
     auto feedback = new FeedbackPkt();

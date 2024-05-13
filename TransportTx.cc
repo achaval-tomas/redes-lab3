@@ -95,6 +95,10 @@ void TransportTx::initialize() {
 }
 
 void TransportTx::finish() {
+    for (auto& p : buffer) {
+        delete p.pkt;
+    }
+    buffer.clear();
 }
 
 void TransportTx::handleMessage(cMessage* msg) {
