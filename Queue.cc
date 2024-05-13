@@ -12,7 +12,7 @@ private:
     cMessage* endServiceEvent = NULL;
     simtime_t serviceTime;
     cOutVector bufferSizeVector;
-    cOutVector packetDropVector;
+    cOutVector droppedPacketsVector;
 
 public:
     Queue();
@@ -36,8 +36,8 @@ Queue::~Queue() {
 void Queue::initialize() {
     buffer.setName("buffer");
     endServiceEvent = new cMessage("endService");
-    packetDropVector.setName("Packets dropped");
-    bufferSizeVector.setName("Buffer size");
+    droppedPacketsVector.setName("DroppedPackets");
+    bufferSizeVector.setName("BufferSize");
 }
 
 void Queue::finish() {
@@ -59,7 +59,7 @@ void Queue::handleMessage(cMessage* msg) {
     } else if (buffer.getLength() >= par("bufferSize").intValue()) {
         delete msg; // drop msg
         this->bubble("packet dropped");
-        packetDropVector.record(1);
+        droppedPacketsVector.record(1);
     } else { // if msg is a data packet
         // enqueue the packet
         buffer.insert(msg);

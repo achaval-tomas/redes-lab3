@@ -47,8 +47,8 @@ private:
     simtime_t estimatedRttStdDev = 0.0;
     simtime_t timeoutTime = 3;
 
-    cOutVector packetsSentVector;
-    unsigned int packetsSent = 0;
+    cOutVector sentPacketsVector;
+    unsigned int sentPackets = 0;
 
     cOutVector cwndVector;
     cOutVector ssthreshVector;
@@ -90,8 +90,8 @@ void TransportTx::initialize() {
     cwndVector.record(cwnd);
     ssthreshVector.record(ssthresh);
     timeoutTimeVector.record(timeoutTime);
-    packetsSentVector.setName("Packets Sent");
-    packetsSent = 0;
+    sentPacketsVector.setName("SentPackets");
+    sentPackets = 0;
     bufferSizeVector.setName("BufferSize");
     bufferSizeVector.record(buffer.size());
 }
@@ -152,7 +152,7 @@ void TransportTx::handleEndServiceMessage() {
     assert(pktToSend->pkt->getSeqNumber() < windowStart + windowSize);
 
     // Send packet
-    packetsSentVector.record(++packetsSent);
+    sentPacketsVector.record(++sentPackets);
     send(dupPkt, "toOut$o");
     pktToSend->status = PacketStatus::Sent;
     inFlightPackets++;
