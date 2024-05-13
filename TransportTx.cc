@@ -14,7 +14,6 @@ using namespace omnetpp;
 constexpr double ALPHA = 7.0 / 8.0;
 constexpr double BETA = 3.0 / 4.0;
 constexpr double STD_DEV_COEFFICIENT = 4;
-constexpr double TIMEOUT_EPSILON = 0.01;
 
 enum PacketStatus {
     Ready,
@@ -44,9 +43,9 @@ private:
     unsigned int ssthresh = UINT32_MAX;
     double cwnd = 1.0;
 
-    double estimatedRtt = 1.0;
-    double estimatedRttStdDev = 0.0;
-    double timeoutTime = 3;
+    simtime_t estimatedRtt = 1.0;
+    simtime_t estimatedRttStdDev = 0.0;
+    simtime_t timeoutTime = 3;
 
     cOutVector packetsSentVector;
     unsigned int packetsSent = 0;
@@ -256,10 +255,13 @@ void TransportTx::handleFeedbackPacket(FeedbackPkt* feedbackPkt) {
             inFlightPackets--;
         }
 
-        auto measuredRtt = (simTime() - pkt.sendTimestamp).dbl();
+        auto measuredRtt = simTime() - pkt.sendTimestamp;
         estimatedRtt = ALPHA * estimatedRtt + (1.0 - ALPHA) * measuredRtt;
-        estimatedRttStdDev = BETA * estimatedRttStdDev + (1.0 - BETA) * std::abs(measuredRtt - estimatedRtt);
-        timeoutTime = TIMEOUT_EPSILON + estimatedRtt + STD_DEV_COEFFICIENT * estimatedRttStdDev;
+        auto diff = measuredRtt - estimatedRtt;
+        if (diff < 0)
+            diff = -diff;
+        estimatedRttStdDev = BETA * estimatedRttStdDev + (1.0 - BETA) * diff;
+        timeoutTime = estimatedRtt + STD_DEV_COEFFICIENT * estimatedRttStdDev;
         timeoutTimeVector.record(timeoutTime);
 
         buffer[pktIdx].status = PacketStatus::Acked;
