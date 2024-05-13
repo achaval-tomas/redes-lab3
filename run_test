@@ -1,11 +1,20 @@
 #!/bin/bash
 gen_interval=$1
+
+export_vec() {
+    module=$1
+    name=$2
+    filename=./results/${module}_${name}_${gen_interval}.csv
+    opp_scavetool x ./results/General-#0.vec -F CSV-S -o $filename -f "module=~$module AND name=~$name"
+    sed -i '1d' $filename
+}
+
 sed -i "s/exponential\(.*\)/exponential\($gen_interval\)/" ./omnetpp.ini
 make MODE=debug
 ./lab3_dbg -u Cmdenv
-opp_scavetool x ./results/General-#0.vec -F CSV-S -o ./results/packets_sent_$gen_interval.csv -f "module=~Network.nodeTx.traTx AND name=~\"Packets Sent\""
-opp_scavetool x ./results/General-#0.vec -F CSV-S -o ./results/tx_buffer_size_$gen_interval.csv -f "module=~Network.nodeTx.traTx AND name=~BufferSize"
-opp_scavetool x ./results/General-#0.vec -F CSV-S -o ./results/received_packets_$gen_interval.csv -f "module=~Network.nodeRx.sink AND name=~ReceivedPackets"
-opp_scavetool x ./results/General-#0.vec -F CSV-S -o ./results/rxbuffersize_$gen_interval.csv -f "module=~Network.nodeRx.traRx AND name=~BufferSize"
+export_vec Network.nodeTx.traTx SentPackets
+export_vec Network.nodeTx.traTx BufferSize
+export_vec Network.nodeRx.traRx BufferSize
+export_vec Network.nodeRx.sink ReceivedPackets
 # echo $(tail -1 ./results/packets_sent.csv)
 # echo $(tail -1 ./results/received_packets.csv)
