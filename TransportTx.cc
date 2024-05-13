@@ -147,7 +147,6 @@ void TransportTx::handleEndServiceMessage() {
     packetsSentVector.record(++packetsSent);
     send(dupPkt, "toOut$o");
     pktToSend->status = PacketStatus::Sent;
-    pktToSend->sendTimestamp = simTime();
     inFlightPackets++;
 
     // Start timeout
@@ -158,6 +157,8 @@ void TransportTx::handleEndServiceMessage() {
     // Schedule next end service event
     serviceTime = dupPkt->getDuration();
     scheduleAt(simTime() + serviceTime, endServiceEvent);
+
+    pktToSend->sendTimestamp = simTime() + serviceTime;
 }
 
 // From Generator
