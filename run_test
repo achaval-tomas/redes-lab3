@@ -10,11 +10,10 @@ export_vec() {
 }
 
 sed -i "s/exponential\(.*\)/exponential\($gen_interval\)/" ./omnetpp.ini
-make MODE=debug
-./lab3_dbg -u Cmdenv
+make MODE=release
+./lab3 -u Cmdenv
 export_vec Network.nodeTx.traTx SentPackets
 export_vec Network.nodeTx.traTx BufferSize
 export_vec Network.nodeRx.traRx BufferSize
 export_vec Network.nodeRx.sink ReceivedPackets
-# echo $(tail -1 ./results/packets_sent.csv)
-# echo $(tail -1 ./results/received_packets.csv)
+export_vec Network.nodeRx.sink Delay
