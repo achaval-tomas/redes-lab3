@@ -47,6 +47,9 @@ private:
     double estimatedRtt = 1.0;
     double estimatedRttStdDev = 0.0;
     double timeoutTime = 3;
+    
+    cOutVector packetsSentVector;
+    unsigned int packetsSent = 0;
 
     cOutVector cwndVector;
     cOutVector ssthreshVector;
@@ -87,6 +90,8 @@ void TransportTx::initialize() {
     cwndVector.record(cwnd);
     ssthreshVector.record(ssthresh);
     timeoutTimeVector.record(timeoutTime);
+    packetsSentVector.setName("Packets Sent");
+    packetsSent = 0;
 }
 
 void TransportTx::finish() {
@@ -139,6 +144,7 @@ void TransportTx::handleEndServiceMessage() {
     auto dupPkt = pktToSend->pkt->dup();
 
     // Send packet
+    packetsSentVector.record(++packetsSent);
     send(dupPkt, "toOut$o");
     pktToSend->status = PacketStatus::Sent;
     pktToSend->sendTimestamp = simTime();
