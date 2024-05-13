@@ -54,6 +54,8 @@ private:
     cOutVector ssthreshVector;
     cOutVector timeoutTimeVector;
 
+    cOutVector bufferSizeVector;
+
 public:
     TransportTx();
     ~TransportTx() override;
@@ -90,6 +92,8 @@ void TransportTx::initialize() {
     timeoutTimeVector.record(timeoutTime);
     packetsSentVector.setName("Packets Sent");
     packetsSent = 0;
+    bufferSizeVector.setName("BufferSize");
+    bufferSizeVector.record(buffer.size());
 }
 
 void TransportTx::finish() {
@@ -188,6 +192,7 @@ void TransportTx::handleDataPacket(DataPkt* pkt) {
     EV_TRACE << "[TTX] assigned seq n° " << seqNumber << " to data packet" << std::endl;
 
     buffer.push_back(DataPktWithStatus { pkt, PacketStatus::Ready });
+    bufferSizeVector.record(buffer.size());
 
     if (!endServiceEvent->isScheduled()) {
         scheduleAt(simTime(), endServiceEvent);
@@ -206,6 +211,7 @@ void TransportTx::handleFeedbackPacket(FeedbackPkt* feedbackPkt) {
             buffer.pop_front();
         }
         windowStart = newWindowStart;
+        bufferSizeVector.record(buffer.size());
     }
 
     EV_TRACE << "[TTX] received feedback packet for " << ackNumber << std::endl;
