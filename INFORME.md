@@ -4,7 +4,7 @@
 * [Introducción](#introducción)
 * [Definiciones](#definiciones)
 * [Parte 1](#parte-1)
-    * [Descripción de la red](#descrpcion-de-la-red-de-la-parte-1)
+    * [Descripción de la red](#descripción-de-la-red-de-la-parte-1)
     * [Implementación](#implementación-de-la-parte-1)
     * [Analisis](#análisis-de-la-parte-1)
 * [Parte 2](#parte-2)
