@@ -17,6 +17,7 @@ private:
     simtime_t serviceTime;
     unsigned int windowStart = 0;
     unsigned int windowSize = 0; // aka buffer size
+    cOutVector bufferSizeVector;
 
 public:
     TransportRx();
@@ -47,6 +48,8 @@ void TransportRx::initialize() {
     scheduleAt(simTime(), endServiceEvent);
     windowSize = par("bufferSize");
     buffer.resize(windowSize, nullptr);
+    bufferSizeVector.setName("BufferSize");
+    bufferSizeVector.record(std::count_if(buffer.begin(), buffer.end(), [](auto p) { return p != nullptr; }));
 }
 
 void TransportRx::finish() {
@@ -78,6 +81,7 @@ void TransportRx::handleEndServiceMessage() {
     send(pkt, "toOut$o");
     buffer.pop_front();
     buffer.push_back(nullptr);
+    bufferSizeVector.record(std::count_if(buffer.begin(), buffer.end(), [](auto p) { return p != nullptr; }));
     windowStart++;
 
     serviceTime = pkt->getDuration();
@@ -108,6 +112,7 @@ void TransportRx::handleDataPacket(DataPkt* pkt) {
     } else {
         delete pkt;
     }
+    bufferSizeVector.record(std::count_if(buffer.begin(), buffer.end(), [](auto p) { return p != nullptr; }));
 
     auto feedback = new FeedbackPkt();
     feedback->setAckNumber(seqNumber);
