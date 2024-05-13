@@ -31,7 +31,6 @@ simple TransportTx
     parameters:
         int bufferSize;
         int windowSize;
-        double timeoutTime;
         @display("i=block/queue;q=buffer");
     gates:
         input toApp;

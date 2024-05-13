@@ -9,6 +9,12 @@
 #include <omnetpp.h>
 #include <string.h>
 
+using namespace omnetpp;
+
+constexpr double ALPHA = 7.0 / 8.0;
+constexpr double BETA = 3.0 / 4.0;
+constexpr double STD_DEV_COEFFICIENT = 4;
+
 enum PacketStatus {
     Ready,
     Sent,
@@ -17,15 +23,14 @@ enum PacketStatus {
 
 enum CongestionStatus {
     SlowStart,
-    AdditiveIncrease
+    AdditiveIncrease,
 };
 
 struct DataPktWithStatus {
     DataPkt* pkt;
     PacketStatus status;
+    simtime_t sendTimestamp;
 };
-
-using namespace omnetpp;
 
 class TransportTx : public cSimpleModule {
 private:
@@ -39,8 +44,13 @@ private:
     unsigned int ssthresh = UINT32_MAX;
     double cwnd = 1.0;
 
+    double estimatedRtt = 1.0;
+    double estimatedRttStdDev = 0.0;
+    double timeoutTime = 3;
+
     cOutVector cwndVector;
     cOutVector ssthreshVector;
+    cOutVector timeoutTimeVector;
 
 public:
     TransportTx();
@@ -73,8 +83,10 @@ void TransportTx::initialize() {
     windowSize = par("windowSize");
     cwndVector.setName("cwnd");
     ssthreshVector.setName("ssthresh");
+    timeoutTimeVector.setName("timeoutTime");
     cwndVector.record(cwnd);
     ssthreshVector.record(ssthresh);
+    timeoutTimeVector.record(timeoutTime);
 }
 
 void TransportTx::finish() {
@@ -129,12 +141,13 @@ void TransportTx::handleEndServiceMessage() {
     // Send packet
     send(dupPkt, "toOut$o");
     pktToSend->status = PacketStatus::Sent;
+    pktToSend->sendTimestamp = simTime();
     inFlightPackets++;
 
     // Start timeout
     auto timeoutMsg = new TimeoutMsg("timeout");
     timeoutMsg->setSeqNumber(pktToSend->pkt->getSeqNumber());
-    scheduleAt(simTime() + par("timeoutTime"), timeoutMsg);
+    scheduleAt(simTime() + timeoutTime, timeoutMsg);
 
     // Schedule next end service event
     serviceTime = dupPkt->getDuration();
@@ -169,9 +182,9 @@ void TransportTx::handleDataPacket(DataPkt* pkt) {
 }
 
 // From Receiver
-void TransportTx::handleFeedbackPacket(FeedbackPkt* pkt) {
-    auto ackNumber = pkt->getAckNumber();
-    delete pkt;
+void TransportTx::handleFeedbackPacket(FeedbackPkt* feedbackPkt) {
+    auto ackNumber = feedbackPkt->getAckNumber();
+    delete feedbackPkt;
 
     EV_TRACE << "[TTX] received feedback packet for " << ackNumber << std::endl;
 
@@ -206,7 +219,8 @@ void TransportTx::handleFeedbackPacket(FeedbackPkt* pkt) {
     }
 
     // MAYBE: windowSize = pkt->getWindowSize();
-    if (buffer[pktIdx].status != PacketStatus::Acked) {
+    auto& pkt = buffer[pktIdx];
+    if (pkt.status != PacketStatus::Acked) {
         // If a timeout occurred (*) and the packet was queued for retransmission,
         // but a delayed ack arrived before we actually sent the retransmission,
         // then we have already decremented inFlightPackets in the timeout handler,
@@ -215,9 +229,15 @@ void TransportTx::handleFeedbackPacket(FeedbackPkt* pkt) {
         // arrived, there is no problem because if a later ack arrives, we will ignore
         // it, and thus inFlightPackets will not be decremented again.
         // (*) if a timeout hasn't occurred for this packet, its status will be 'Sent'.
-        if (buffer[pktIdx].status == PacketStatus::Sent) {
+        if (pkt.status == PacketStatus::Sent) {
             inFlightPackets--;
         }
+
+        auto measuredRtt = (simTime() - pkt.sendTimestamp).dbl();
+        estimatedRtt = ALPHA * estimatedRtt + (1.0 - ALPHA) * measuredRtt;
+        estimatedRttStdDev = BETA * estimatedRttStdDev + (1.0 - BETA) * std::abs(measuredRtt - estimatedRtt);
+        timeoutTime = estimatedRtt + STD_DEV_COEFFICIENT * estimatedRttStdDev;
+        timeoutTimeVector.record(timeoutTime);
 
         buffer[pktIdx].status = PacketStatus::Acked;
     }
