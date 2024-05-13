@@ -90,7 +90,7 @@ void TransportRx::handleDataPacket(DataPkt* pkt) {
 
     EV_TRACE << "[TRX] received data packet " << seqNumber << std::endl;
 
-    if (seqNumber >= windowSize + windowStart) {
+    if (seqNumber >= windowStart + windowSize) {
         delete pkt;
         this->bubble("packet dropped");
         EV_INFO << "[TRX] packet dropped" << std::endl;
@@ -111,7 +111,7 @@ void TransportRx::handleDataPacket(DataPkt* pkt) {
 
     auto feedback = new FeedbackPkt();
     feedback->setAckNumber(seqNumber);
-    feedback->setWindowSize(windowSize);
+    feedback->setWindowStart(windowStart);
 
     auto name = "ack=" + std::to_string(seqNumber);
     feedback->setName(name.c_str());

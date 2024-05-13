@@ -14,6 +14,7 @@ using namespace omnetpp;
 constexpr double ALPHA = 7.0 / 8.0;
 constexpr double BETA = 3.0 / 4.0;
 constexpr double STD_DEV_COEFFICIENT = 4;
+constexpr double TIMEOUT_EPSILON = 0.01;
 
 enum PacketStatus {
     Ready,
@@ -36,7 +37,6 @@ class TransportTx : public cSimpleModule {
 private:
     std::deque<DataPktWithStatus> buffer;
     cMessage* endServiceEvent = NULL;
-    simtime_t serviceTime;
     unsigned int windowStart = 0;
     unsigned int windowSize = 0;
     unsigned int inFlightPackets = 0;
@@ -47,7 +47,7 @@ private:
     double estimatedRtt = 1.0;
     double estimatedRttStdDev = 0.0;
     double timeoutTime = 3;
-    
+
     cOutVector packetsSentVector;
     unsigned int packetsSent = 0;
 
@@ -82,7 +82,6 @@ TransportTx::~TransportTx() {
 
 void TransportTx::initialize() {
     endServiceEvent = new cMessage("endService");
-    // MAYBE: Dynamically adjust window size
     windowSize = par("windowSize");
     cwndVector.setName("cwnd");
     ssthreshVector.setName("ssthresh");
@@ -147,22 +146,26 @@ void TransportTx::handleEndServiceMessage() {
 
     auto dupPkt = pktToSend->pkt->dup();
 
+    assert(pktToSend->pkt->getSeqNumber() < windowStart + windowSize);
+
     // Send packet
     packetsSentVector.record(++packetsSent);
     send(dupPkt, "toOut$o");
     pktToSend->status = PacketStatus::Sent;
     inFlightPackets++;
 
+    auto serviceTime = dupPkt->getDuration();
+    auto endServiceTime = simTime() + serviceTime;
+
     // Start timeout
     auto timeoutMsg = new TimeoutMsg("timeout");
     timeoutMsg->setSeqNumber(pktToSend->pkt->getSeqNumber());
-    scheduleAt(simTime() + timeoutTime, timeoutMsg);
+    scheduleAt(endServiceTime + timeoutTime, timeoutMsg);
 
     // Schedule next end service event
-    serviceTime = dupPkt->getDuration();
-    scheduleAt(simTime() + serviceTime, endServiceEvent);
+    scheduleAt(endServiceTime, endServiceEvent);
 
-    pktToSend->sendTimestamp = simTime() + serviceTime;
+    pktToSend->sendTimestamp = endServiceTime;
 }
 
 // From Generator
@@ -195,7 +198,16 @@ void TransportTx::handleDataPacket(DataPkt* pkt) {
 // From Receiver
 void TransportTx::handleFeedbackPacket(FeedbackPkt* feedbackPkt) {
     auto ackNumber = feedbackPkt->getAckNumber();
+    auto newWindowStart = feedbackPkt->getWindowStart();
     delete feedbackPkt;
+
+    if (newWindowStart >= windowStart) {
+        for (auto i = 0; i < newWindowStart - windowStart; ++i) {
+            delete buffer.front().pkt;
+            buffer.pop_front();
+        }
+        windowStart = newWindowStart;
+    }
 
     EV_TRACE << "[TTX] received feedback packet for " << ackNumber << std::endl;
 
@@ -247,7 +259,7 @@ void TransportTx::handleFeedbackPacket(FeedbackPkt* feedbackPkt) {
         auto measuredRtt = (simTime() - pkt.sendTimestamp).dbl();
         estimatedRtt = ALPHA * estimatedRtt + (1.0 - ALPHA) * measuredRtt;
         estimatedRttStdDev = BETA * estimatedRttStdDev + (1.0 - BETA) * std::abs(measuredRtt - estimatedRtt);
-        timeoutTime = estimatedRtt + STD_DEV_COEFFICIENT * estimatedRttStdDev;
+        timeoutTime = TIMEOUT_EPSILON + estimatedRtt + STD_DEV_COEFFICIENT * estimatedRttStdDev;
         timeoutTimeVector.record(timeoutTime);
 
         buffer[pktIdx].status = PacketStatus::Acked;
@@ -255,13 +267,14 @@ void TransportTx::handleFeedbackPacket(FeedbackPkt* feedbackPkt) {
 
     EV_TRACE << "[TTX] received ack for packet " << ackNumber << std::endl;
 
-    trySlideWindow();
+    // trySlideWindow();
 
     if (!endServiceEvent->isScheduled()) {
         scheduleAt(simTime(), endServiceEvent);
     }
 }
 
+// DEPRECATED
 void TransportTx::trySlideWindow() {
     auto leadingAckedCount = 0;
     for (auto pkt : buffer) {
