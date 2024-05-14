@@ -45,7 +45,7 @@ Haremos referencia a las siguientes definiciones a lo largo del informe.
 La red que utilizamos para el análisis de esta parte está descrita por los siguientes gráficos:
 
 | Network | NodeTx | NodeRx |
-| ------ | ------------- | ------ |
+| ------- | ------ | ------ |
 | <img src="graficos/Parte1-Network-Setup.png" alt="p1NetSETUP" width="500"/>  | <img src="graficos/Parte1-NodeTx.png" alt="p1NodeTx" height="200"/> | <img src="graficos/Parte1-NodeRx.png" alt="p1NodeRx" height="200"/>  |
 
 Cada arista del gráfico es un link o enlace que tendrá su propia velocidad de transmisión, y cada "cuadradito" de la network es un nodo.
@@ -77,7 +77,7 @@ En el caso de generar un paquete cada 0,1s, el tamaño del búffer del NodeTxQue
 Por el análisis realizado, concluimos que este caso es un problema de **congestión en el receptor**, por lo que se solucionará en la parte 2 con un algoritmo de **control de flujo**.
 
 
-### Caso 2: Congestión en el router
+### Caso 2: Congestión en la red
 | NodeTx | Network Queue | NodeRx |
 | ------ | ------------- | ------ |
 | ![](graficos/Parte1-Caso2-NodeTxQueue.png) | ![](graficos/Parte1-Caso2-NetworkQueue.png) | ![](graficos/Parte1-Caso2-NodeRxQueue.png) |
@@ -85,7 +85,7 @@ Por el análisis realizado, concluimos que este caso es un problema de **congest
 En este caso, el link de NodeTxQueue a NetworkQueue tiene un datarate de 1Mbps, al igual que el link de NodeRxQueue a Sink.
 El link de NetworkQueue a NodeRxQueue tiene un datarate de 0,5Mbps.
 
-La descripción del problema de este caso es la misma que para el caso 1, pero con **el cuello de botella en el link de NetworkQueue a NodeRxQueue** pues este es el enlace con menor capacidad de envío en la red y por consecuencia el que se satura. Por esta razón es que el "router" de la red, es decir la _NetworkQueue_ es quien se llena, en lugar de la _NodeRxQueue_ (caso 1).
+La descripción del problema de este caso es la misma que para el caso 1, pero con **el cuello de botella en el link de NetworkQueue a NodeRxQueue** pues este es el enlace con menor capacidad de envío en la red y por consecuencia el que se satura. Por esta razón es que la red, es decir la _NetworkQueue_ es lo que se llena, en lugar de la _NodeRxQueue_ (caso 1).
 
 Este es un problema de **congestión en la red**, entonces el algoritmo de **control de congestión** en la parte 2 lo intentará mitigar.
 
@@ -107,8 +107,8 @@ En esta parte, agregamos paquetes de **feedback** que serán útiles en la imple
 
 En esta parte, los 'buffers' de la network serán:
 - TraTx : Almacena información que recibe del generador para enviarla a la red cuando lo considere oportuno. Tambíen recibe los paquetes de feedback.
-- Queue0 : Representa un 'router' con capacidad limitada.
-- TraRx : Almacena información que recibe del 'router' para enviarla al Sink o 'capa de aplicación'. Se encarga de envíar los paquetes de feedback.
+- Queue0 : Representa una 'red' con capacidad limitada.
+- TraRx : Almacena información que recibe del la 'red' para enviarla al Sink o 'capa de aplicación'. Se encarga de envíar los paquetes de feedback.
 
 Cuando llega un paquete a un buffer se pueden dar dos situaciones: 
 - Si el buffer tiene espacio, **almacena** la información que recibe hasta poder enviarla.
@@ -184,7 +184,7 @@ Tambien se puede ver que a diferencia de [el caso 1 de la parte 1](#caso-1-conge
 De esta manera logramos que siempre haya paquetes siendo enviados por el enlace más debil, y que nunca se sature un buffer.
 
 
-### Caso 2: Congestión en el router
+### Caso 2: Congestión en la red
 | NodeTx | Network Queue | NodeRx |
 | ------ | ------------- | ------ |
 | ![](graficos/Parte2-Caso2-NodeTxBuffer.png) | ![](graficos/Parte2-Caso2-NetworkQueue.png) | ![](graficos/Parte2-Caso2-NodeRxBuffer.png) |
@@ -193,9 +193,8 @@ Al igual que en el caso anterior, se puede ver que la ocupación del buffer del 
 
 En este caso, actúa nuestro [algoritmo de control de congestión](#control-de-congestión) el cual no solo evita que se sature la "Network Queue", si no que tampoco permite que se vacíe, manteniendo así un aprovechamiento máximo de la red. El gráfico del NodeRx muestra que su tamaño de buffer se mueve constantemente entre 0 y 1, lo cual indica que este nodo **envía** correctamente todos los paquetes que le llegan, sin demoras, a la capa de aplicación.
 
-<!--
-En el caso 1, se saturaba el receptor y su buffer se mantenía casi lleno. En el caso 2, se satura el router pero su buffer no se mantiene "casi lleno", es más, ni siquiera se acerca a ello! Esto sucede porque a diferencia del caso 1 donde podemos conocer la posición de la ventana actual del receptor y mantenerla casi llena, nos basamos en aproximar el valor de un RTT (round trip time) para estimar el estado de congestión de la red. Como el timeout de un paquete ocurre si este se mantiene más tiempo del que deseamos encolado en un buffer (_es decir, su RTT fue tan mayor al esperado que ocurrió un timeout antes de recibir su ACK_), el transmisor asume que se está sobrecargando la red e inmediatamente reduce su tasa de envío. Luego intenta darle una nueva oportunidad a la red, hasta que vuelva a ocurrir un timeout.
--->
+En el caso 1, se saturaba el receptor y su buffer se mantenía casi lleno. En el caso 2, se satura la red pero su buffer no se mantiene "casi lleno", es más, ¡ni siquiera se acerca a ello! Esto sucede porque a diferencia del caso 1 donde podemos conocer la posición de la ventana actual del receptor y mantenerla casi llena, nos basamos en aproximar el valor de un RTT (round trip time) para estimar el estado de congestión de la red. Como el timeout de un paquete ocurre si este se mantiene más tiempo del que deseamos encolado en un buffer (_es decir, su RTT fue tan mayor al esperado que ocurrió un timeout antes de recibir su ACK_), el transmisor asume que se está sobrecargando la red e inmediatamente reduce su tasa de envío. Luego intenta darle una nueva oportunidad a la red, hasta que vuelva a ocurrir un timeout.
+
 
 ## Comparaciones
 
@@ -210,7 +209,7 @@ En la parte 1, como no hay ningún tipo de control, los paquetes que se introduc
 
 A diferencia de lo anterior, en la Parte 2 del proyecto están actuando nuestros algoritmos de control de flujo y congestión, que aprenden y se mantienen informados del estado aproximado de la red durante la simulación. Gracias a estos algoritmos, la cantidad de paquetes que se introducen a la red **_se balancea_** con la cantidad de paquetes que salen de la red _(notar la adaptación de la pendiente roja a la verde)_. Esto logra que **ningun buffer intermedio se sature** y pierda paquetes. También se consigue que el nodo que generaba el cuello de botella, es decir, el **nodo más debil de la red**, [**se mantenga ocupado siempre en ambos casos**](#análisis-de-la-parte-2). Ambos logros implican que mantuvimos el aprovechamiento de la red al máximo, **sin pérdida de paquetes**, y asegurando que **todos los paquetes llegan en orden**.
 
-La diferencia entre el segundo y tercer gráfico, es que **cuando el problema de congestión se encuentra en el receptor (caso 1)**, nuestro [**algoritmo de control de flujo**](#control-de-flujo) permite **casi** llenar su buffer y luego trabaja de una manera similar a parada y espera, donde sólo manda paquetes de a 1 para [**mantener el buffer del receptor en su límite**](#caso-1-congestión-en-el-receptor-1), pero nunca pasarse de él _(observar la curva roja alcanzando y manteniendose 200 paquetes por encima de la verde, donde 200 es justamente el tamaño del buffer del receptor)_. En cambio, **cuando el problema se encuentra en la red (caso 2)**, nos enteramos del límite antes de estar cerca de saturar cualquier buffer, pues [**nuestro algoritmo de control de congestión**](#control-de-congestión) actúa apenas ocurre el primer timeout _(observar que la curva roja se adapta a la verde en los primeros segundos de la simulación, y luego se mantiene a la par)_. Esto también se puede ver en [**el segundo gráfico del caso 2 de la parte 2**](#caso-2-congestión-en-el-router-1) pues cuando el tamaño del buffer del "router" llega a ~13 en los primeros segundos (aunque su capacidad sea 200), el algoritmo se da cuenta de que la tasa de envío es demasiado alta y nunca más se pasa de ese valor.
+La diferencia entre el segundo y tercer gráfico, es que **cuando el problema de congestión se encuentra en el receptor (caso 1)**, nuestro [**algoritmo de control de flujo**](#control-de-flujo) permite **casi** llenar su buffer y luego trabaja de una manera similar a parada y espera, donde sólo manda paquetes de a 1 para [**mantener el buffer del receptor en su límite**](#caso-1-congestión-en-el-receptor-1), pero nunca pasarse de él _(observar la curva roja alcanzando y manteniendose 200 paquetes por encima de la verde, donde 200 es justamente el tamaño del buffer del receptor)_. En cambio, **cuando el problema se encuentra en la red (caso 2)**, nos enteramos del límite antes de estar cerca de saturar cualquier buffer, pues [**nuestro algoritmo de control de congestión**](#control-de-congestión) actúa apenas ocurre el primer timeout _(observar que la curva roja se adapta a la verde en los primeros segundos de la simulación, y luego se mantiene a la par)_. Esto también se puede ver en [**el segundo gráfico del caso 2 de la parte 2**](#caso-2-congestión-en-la-red-1) pues cuando el tamaño de la _NetworkQueue_ llega a ~13 en los primeros segundos (aunque su capacidad sea 200), el algoritmo se da cuenta de que la tasa de envío es demasiado alta y nunca más se pasa de ese valor.
 
 \* cuando hacemos referencia a gráficos anteriores, se deben observar aquellos que representen un intervalo de generación de ~0.1 segundos pues este es el caso más interesante para el análisis actual.
 
