@@ -54,6 +54,8 @@ Las queues utilizadas son lo que llamaremos buffers. Cuando llega un paquete a u
 - Si el buffer tiene espacio, **almacena** la información que recibe hasta poder enviarla.
 - Si no, **dropea** el paquete recibido causando una **perdida** del mismo pues _desaparece de la red_ ya que no hay nadie que se encargue de retransmitirlo.
 
+Aquí los únicos paquetes que existen son paquetes de datos, hacen el recorrido ````gen -> NodeTxQueue -> queue -> NodeRxQueue -> sink```` o "transmisor -> red -> receptor" y no hay ninguna garantía del orden en el que se reciben, pero siempre se recibe el máximo posible (_min(generados, capacidad de la red)_).
+
 ### Análisis de la parte 1
 
 Los siguientes gráficos muestran el tamaño del buffer en los distintos nodos de la red a medida que pasa el timepo de la simulación. Cada linea de color repsesenta una simulación corrida con el **generationInterval** en distribución exponencial sobre valor que se aclara en los gráficos.
@@ -66,7 +68,7 @@ Los siguientes gráficos muestran el tamaño del buffer en los distintos nodos d
 En este caso, el link de NodeTxQueue a NetworkQueue tiene un datarate de 1Mbps, al igual que el link de NetworkQueue a NodeRxQueue.
 El link de NodeRxQueue a Sink tiene un datarate de 0,5Mbps.
 
-Un paquete de 12500B tarda 0,1s en enviarse por un medio de 1Mbps y 0,2s por uno de 0,5Mbps. Esto explica por qué en el caso donde generamos un paquete cada 0,1s, el link de la NodeRxQueue a Sink se satura, ya que le llegan paquetes al doble de la velocidad en que los puede despachar. Los otros links no tienen problema, ya que despachan paquetes cada 0,1s entonces pueden manejar un tiempo de generación de un paquete cada 0,1s o más. Así determinamos que el cuello de botella se encuentra en el link NodeRxQueue a Sink.
+Un paquete de 12500B tarda 0,1s en enviarse por un medio de 1Mbps y 0,2s por uno de 0,5Mbps. Esto explica por qué en el caso donde generamos un paquete cada 0,1s, el link de la NodeRxQueue a Sink se satura, ya que le llegan paquetes al doble de la velocidad en que los puede despachar. Los otros links no tienen problema, ya que despachan paquetes cada 0,1s entonces pueden manejar un tiempo de generación de un paquete cada 0,1s o más. Así determinamos que **el cuello de botella se encuentra en el link NodeRxQueue a Sink**.
 
 Cuando enviamos cada 0,2s o más (lo que representa _menos_ paquetes por segundo), el cuello de botella desaparece, ya que el link más lento (0,5Mbps) puede despachar los paquetes a una velocidad mayor a la que le llegan.
 
@@ -83,7 +85,7 @@ Por el análisis realizado, concluimos que este caso es un problema de **congest
 En este caso, el link de NodeTxQueue a NetworkQueue tiene un datarate de 1Mbps, al igual que el link de NodeRxQueue a Sink.
 El link de NetworkQueue a NodeRxQueue tiene un datarate de 0,5Mbps.
 
-Acá es igual que arriba, pero el cuello de botella está en el link NetworkQueue a NodeRxQueue.
+La descripción del problema de este caso es la misma que para el caso 1, pero con **el cuello de botella en el link de NetworkQueue a NodeRxQueue** pues este es el enlace con menor capacidad de envío en la red y por consecuencia el que se satura. Por esta razón es que el "router" de la red, es decir la _NetworkQueue_ es quien se llena, en lugar de la _NodeRxQueue_ (caso 1).
 
 Este es un problema de **congestión en la red**, entonces el algoritmo de **control de congestión** en la parte 2 lo intentará mitigar.
 
