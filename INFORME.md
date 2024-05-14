@@ -13,6 +13,7 @@
     * [Control de Flujo](#control-de-flujo)
     * [Control de Congestión](#control-de-congestión)
     * [Analisis](#análisis-de-la-parte-2)
+* [Comparaciones](#comparaciones)
 * [Conclusiones](#conclusiones)
 * [Posibles Mejoras](#posibles-mejoras)
 
@@ -76,7 +77,7 @@ Por el análisis realizado, concluimos que este caso es un problema de **congest
 ### Caso 2: Congestión en el router
 | NodeTx | Network Queue | NodeRx |
 | ------ | ------------- | ------ |
-| ![](graficos/Parte1-Caso2-NodeTxQueue.png")  | ![](graficos/Parte1-Caso2-NetworkQueue.png) | ![](graficos/Parte1-Caso2-NodeRxQueue.png)  |
+| ![](graficos/Parte1-Caso2-NodeTxQueue.png) | ![](graficos/Parte1-Caso2-NetworkQueue.png) | ![](graficos/Parte1-Caso2-NodeRxQueue.png) |
 
 En este caso, el link de NodeTxQueue a NetworkQueue tiene un datarate de 1Mbps, al igual que el link de NodeRxQueue a Sink.
 El link de NetworkQueue a NodeRxQueue tiene un datarate de 0,5Mbps.
@@ -150,9 +151,9 @@ Acciones del TRANSMISOR (````traTx````):
 
 ### Control de Flujo
 Nuestro algoritmo de control de flujo se puede caracterizar de la siguiente forma:
-- **Transmisor y receptor** deben tener el **mismo tamaño de ventana** En este caso está hardcodeado en omnetpp.ini, pero se podría implementar para que se negocie en un handshake inicial.
-- El receptor envía en el campo ````windowStart```` de cada FeedbackPkt el último paquete enviado al sink, es decir, informa al transmisor cuál es el primer paquete en su ventana.
-- El transmisor se encarga de no llenar el búfer del receptor, sabiendo que solo puede enviar paquetes con numero de secuencia menores o iguales que el valor ````windowStart + windowSize````.
+- **Transmisor y receptor** deben tener el **mismo tamaño de ventana**. En este caso está hardcodeado en omnetpp.ini, pero se podría implementar para que se negocie en un handshake inicial.
+- El receptor envía en el campo ````windowStart```` de cada FeedbackPkt el último paquete enviado al sink, es decir, informa al transmisor sobre cuál es el primer paquete en su ventana.
+- El transmisor se encarga de no llenar el búfer del receptor, sabiendo que solo puede enviar paquetes con numeros de secuencia menores o iguales que el valor ````windowStart + windowSize````.
 
 
 ### Control de Congestión
@@ -183,10 +184,25 @@ Tambien se puede ver que a diferencia de [el caso 1 de la parte 1](#caso-1-conge
 | ------ | ------------- | ------ |
 | ![](graficos/Parte2-Caso2-NodeTxBuffer.png) | ![](graficos/Parte2-Caso2-NetworkQueue.png) | ![](graficos/Parte2-Caso2-NodeRxBuffer.png) |
 
-## Conclusiones
+## Comparaciones
+
+### Generados, Enviados y Recibidos
+Uno de los gráficos más interesantes que obtuvimos es el que compara paquetes generados, paquetes introducidos a la red, y paquetes recibidos durante 200 segundos de simulación. Para estas comparaciones establecimos el generationInterval en ````exponential(0.1)````, lo cual genera una tasa de generación de ~10 paquetes por segundo.
+
 | Parte 1 (ambos casos) | Parte 2 Caso 1 (congestión en el receptor) | Parte 2 Caso 2 (congestión en la red) |
-| --------------------- | ------------------------------------- | ------------------------------------------ |
+| --------------------- | ------------------------------------------ | ------------------------------------- |
 | ![](graficos/Parte1-Caso1y2-GenSentRec.png) | ![](graficos/Parte2-Caso1-GenSentRec.png) | ![](graficos/Parte2-Caso2-GenSentRec.png) |
+
+En la parte 1, como no hay ningún tipo de control, los paquetes que se introducen a la red son los mismos que los generados y por lo tanto se congestiona algún buffer, pues la red no es capaz de manejar esa cantidad de paquetes a la vez. Podemos comprobar con el gráfico de esta parte que el límite de la red es efectivamente transmitir ~1000 paquetes en 200seg, pues uno de los enlaces tan solo puede enviar datos a 0.5Mbps = 5 paquetes por segundo (12500B = 0.1Mb por paquete) y, como siempre le llegarán de más, su utilización se mantiene al máximo.
+
+A diferencia de lo anterior, en la Parte 2 del proyecto están actuando nuestros algoritmos de control de flujo y congestión, que aprenden y se mantienen informados del estado aproximado de la red durante la simulación. Gracias a estos algoritmos, la cantidad de paquetes que se introducen a la red **_se balancea_** con la cantidad de paquetes que salen de la red _(notar la adaptación de la pendiente roja a la verde)_. Esto logra que **ningun buffer intermedio se sature** y pierda paquetes. También se consigue que el nodo que generaba el cuello de botella, es decir, el **nodo más debil de la red**, [**se mantenga ocupado siempre en ambos casos**](#análisis-de-la-parte-2). Ambos logros implican que mantuvimos el aprovechamiento de la red al máximo, **sin pérdida de paquetes**, y asegurando que **todos los paquetes llegan en orden**.
+
+La diferencia entre el segundo y tercer gráfico, es que **cuando el problema de congestión se encuentra en el receptor (caso 1)**, nuestro [**algoritmo de control de flujo**](#control-de-flujo) permite **casi** llenar su buffer y luego trabaja de una manera similar a parada y espera, donde sólo manda paquetes de a 1 para [**mantener el buffer del receptor en su límite**](#caso-1-congestión-en-el-receptor-1), pero nunca pasarse de él _(observar la curva roja alcanzando y manteniendose 200 paquetes por encima de la verde, donde 200 es justamente el tamaño del buffer del receptor)_. En cambio, **cuando el problema se encuentra en la red (caso 2)**, nos enteramos del límite antes de estar cerca de saturar cualquier buffer, pues [**nuestro algoritmo de control de congestión**](#control-de-congestión) actúa apenas ocurre el primer timeout _(observar que la curva roja se adapta a la verde en los primeros segundos de la simulación, y luego se mantiene a la par)_. Esto también se puede ver en [**el segundo gráfico del caso 2 de la parte 2**](#caso-2-congestión-en-el-router-1) pues cuando el tamaño del buffer del "router" llega a ~13 en los primeros segundos (aunque su capacidad sea 200), el algoritmo se da cuenta de que la tasa de envío es demasiado alta y nunca más se pasa de ese valor.
+
+\* cuando hacemos referencia a gráficos anteriores, se deben observar aquellos que representen un intervalo de generación de ~0.1 segundos pues este es el caso más interesante para el análisis actual.
+
+## Conclusiones
+
 
 ## Posibles Mejoras
 - Enviar periódicamente el windowStart
