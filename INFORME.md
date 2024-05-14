@@ -175,19 +175,30 @@ Al igual que en la primera parte, comenzaremos graficando el uso de los buffers 
 
 Aquí se ve claramente como el nodo transmisor regula la cantidad de paquetes que mete a la red, y por lo tanto su buffer de envío se llena a medida que va recibiendo paquetes, pues no siempre los está mandando al mismo ritmo.
 
-Tambien se puede ver que a diferencia de [el caso 1 de la parte 1](#caso-1-congestión-en-el-receptor), cuando el buffer del receptor se está por llenar, el transmisor lo sabe y _no permite_ que esto suceda, pues nunca va a mandar más paquetes de los que la ventana del receptor le permite, esto se ve en la siguiente imagen que es un zoom-in de el gráfico para NodeRx.
+Tambien se puede ver que a diferencia de [el caso 1 de la parte 1](#caso-1-congestión-en-el-receptor), cuando el buffer del receptor se está por llenar, el transmisor lo sabe gracias a nuestro [algoritmo de control de flujo](#control-de-flujo) y _no permite_ que esto suceda, pues nunca va a mandar más paquetes de los que la ventana del receptor le permite, esto se ve en la siguiente imagen que es un zoom-in de el gráfico para NodeRx.
 
 <img src="graficos/Parte2-Caso1-NodeRxBuffer-Zoom.png" alt="p2c1Rx" width="200"/>
+
+De esta manera logramos que siempre haya paquetes siendo enviados por el enlace más debil, y que nunca se sature un buffer.
+
 
 ### Caso 2: Congestión en el router
 | NodeTx | Network Queue | NodeRx |
 | ------ | ------------- | ------ |
 | ![](graficos/Parte2-Caso2-NodeTxBuffer.png) | ![](graficos/Parte2-Caso2-NetworkQueue.png) | ![](graficos/Parte2-Caso2-NodeRxBuffer.png) |
 
+Al igual que en el caso anterior, se puede ver que la ocupación del buffer del NodeTx crece linealmente a medida que regula el ritmo con el que introduce paquetes a la red.
+
+En este caso, actúa nuestro [algoritmo de control de congestión](#control-de-congestión) el cual no solo evita que se sature la "Network Queue", si no que tampoco permite que se vacíe, manteniendo así un aprovechamiento máximo de la red. El gráfico del NodeRx muestra que su tamaño de buffer se mueve constantemente entre 0 y 1, lo cual indica que este nodo **envía** correctamente todos los paquetes que le llegan, sin demoras, a la capa de aplicación.
+
+<!--
+En el caso 1, se saturaba el receptor y su buffer se mantenía casi lleno. En el caso 2, se satura el router pero su buffer no se mantiene "casi lleno", es más, ni siquiera se acerca a ello! Esto sucede porque a diferencia del caso 1 donde podemos conocer la posición de la ventana actual del receptor y mantenerla casi llena, nos basamos en aproximar el valor de un RTT (round trip time) para estimar el estado de congestión de la red. Como el timeout de un paquete ocurre si este se mantiene más tiempo del que deseamos encolado en un buffer (_es decir, su RTT fue tan mayor al esperado que ocurrió un timeout antes de recibir su ACK_), el transmisor asume que se está sobrecargando la red e inmediatamente reduce su tasa de envío. Luego intenta darle una nueva oportunidad a la red, hasta que vuelva a ocurrir un timeout.
+-->
+
 ## Comparaciones
 
 ### Generados, Enviados y Recibidos
-Uno de los gráficos más interesantes que obtuvimos es el que compara paquetes generados, paquetes introducidos a la red, y paquetes recibidos durante 200 segundos de simulación. Para estas comparaciones establecimos el generationInterval en ````exponential(0.1)````, lo cual genera una tasa de generación de ~10 paquetes por segundo.
+Uno de los gráficos más interesantes que obtuvimos es el que compara paquetes generados, paquetes introducidos a la red, y paquetes recibidos durante 200 segundos de simulación. Para estas comparaciones establecimos el generationInterval en ````exponential(0.1)````, lo cual mantiene una tasa de generación de ~10 paquetes por segundo.
 
 | Parte 1 (ambos casos) | Parte 2 Caso 1 (congestión en el receptor) | Parte 2 Caso 2 (congestión en la red) |
 | --------------------- | ------------------------------------------ | ------------------------------------- |
