@@ -5,9 +5,10 @@
 * [Definiciones](#definiciones)
 * [Parte 1](#parte-1)
     * [Descripción de la red](#descripción-de-la-red-de-la-parte-1)
-    * [Implementación](#implementación-de-la-parte-1)
+    <!--* [Implementación](#implementación-de-la-parte-1) -->
     * [Analisis](#análisis-de-la-parte-1)
 * [Parte 2](#parte-2)
+    * [Descripción de la red](#descripción-de-la-red-de-la-parte-2) 
     * [Objetivos Establecidos](#objetivos-que-establecimos)
     * [Entrega de datos confiable](#entrega-confiable)
     * [Control de Flujo](#control-de-flujo)
@@ -37,7 +38,7 @@ Haremos referencia a las siguientes definiciones a lo largo del informe.
 
 ## Parte 1
 
-### Implementación de la parte 1
+<!-- ### Implementación de la parte 1 -->
 
 ### Descripción de la red de la parte 1
 
@@ -87,7 +88,6 @@ Acá es igual que arriba, pero el cuello de botella está en el link NetworkQueu
 Este es un problema de **congestión en la red**, entonces el algoritmo de **control de congestión** en la parte 2 lo intentará mitigar.
 
 ## Parte 2
-
 
 ### Descripción de la red de la parte 2
 
