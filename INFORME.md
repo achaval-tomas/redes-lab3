@@ -8,33 +8,33 @@
 ````
 
 ## Indice
-* [Introducción](#introducción)
-* [Definiciones](#definiciones)
-* [Parte 1](#parte-1)
-    * [Descripción de la red](#descripción-de-la-red-de-la-parte-1)
-    * [Analisis](#análisis-de-la-parte-1)
-* [Parte 2](#parte-2)
-    * [Descripción de la red](#descripción-de-la-red-de-la-parte-2) 
-    * [Objetivos Establecidos](#objetivos-que-establecimos)
-    * [Entrega de datos confiable](#entrega-confiable)
-    * [Control de Flujo](#control-de-flujo)
-    * [Control de Congestión](#control-de-congestión)
-    * [Analisis](#análisis-de-la-parte-2)
-* [Comparaciones](#comparaciones)
-* [Conclusiones](#conclusiones-del-laboratorio)
-* [Algunas Observaciones](#algunas-observaciones)
+- [Introducción](#introducción)
+- [Definiciones](#definiciones)
+- [Parte 1](#parte-1)
+    - [Descripción de la red](#descripción-de-la-red-de-la-parte-1)
+    - [Analisis](#análisis-de-la-parte-1)
+- [Parte 2](#parte-2)
+    - [Descripción de la red](#descripción-de-la-red-de-la-parte-2) 
+    - [Objetivos Establecidos](#objetivos-que-establecimos)
+    - [Entrega de datos confiable](#entrega-confiable)
+    - [Control de Flujo](#control-de-flujo)
+    - [Control de Congestión](#control-de-congestión)
+    - [Analisis](#análisis-de-la-parte-2)
+- [Comparaciones](#comparaciones)
+- [Conclusiones](#conclusiones-del-laboratorio)
+- [Algunas Observaciones](#algunas-observaciones)
 
 ## Introducción
 El objetivo de este laboratorio era analizar los datos de una red y proveer algoritmos de control de flujo y congestión para mejorar el desempeño de la misma. Este informe explica en detalle cada parte del laboratorio, junto con el análisis correspondiente y nuestras conclusiones finales.
 
 ## Definiciones
 Haremos referencia a las siguientes definiciones a lo largo del informe.
-* **Transmisor:** Este término hará referencia al nodo que **envía** los paquetes de **datos**.
-* **Receptor:** Este término hará referencia al nodo que **recibe** los paquetes de **datos**.
-* **Buffer:** Estructura de datos que puede almacenar información.
-* **Congestión:** Un nodo de la red está _congestionado_ si su buffer se llenó por recibir más datos de los que puede enviar.
-* **Paquete dropeado:** Esto describe el hecho de que, por congestión en algún buffer, se descarta un paquete.
-* **Paquete perdido:** Consideramos que un paquete fue _perdido_ cuando _**deja de existir en la red antes de llegar a su destino**_.
+- **Transmisor:** Este término hará referencia al nodo que **envía** los paquetes de **datos**.
+- **Receptor:** Este término hará referencia al nodo que **recibe** los paquetes de **datos**.
+- **Buffer:** Estructura de datos que puede almacenar información.
+- **Congestión:** Un nodo de la red está _congestionado_ si su buffer se llenó por recibir más datos de los que puede enviar.
+- **Paquete dropeado:** Esto describe el hecho de que, por congestión en algún buffer, se descarta un paquete.
+- **Paquete perdido:** Consideramos que un paquete fue _perdido_ cuando _**deja de existir en la red antes de llegar a su destino**_.
 
 ## Parte 1
 
