@@ -1,5 +1,12 @@
 # Redes y Sistemas Distribuidos - Informe del Laboratorio 3
 
+### Integrantes del grupo:
+```` 
+    char* apellidos[] = {"Achával", "Maraschio", "Peyronel"};
+    for (char* apellido : apellidos)
+          printf("Tomás %s\n", apellido);
+````
+
 ## Indice
 * [Introducción](#introducción)
 * [Definiciones](#definiciones)
@@ -20,12 +27,6 @@
 
 ## Introducción
 El objetivo de este laboratorio era analizar los datos de una red y proveer algoritmos de control de flujo y congestión para mejorar el desempeño de la misma. Este informe explica en detalle cada parte del laboratorio, junto con el análisis correspondiente y nuestras conclusiones finales.
-
-### Integrantes del grupo:
-```` 
-for (std::string apellido : ["Achával", "Maraschio", "Peyronel"])
-      printf("Tomás %s\n", apellido)
-````
 
 ## Definiciones
 Haremos referencia a las siguientes definiciones a lo largo del informe.
@@ -66,13 +67,13 @@ Los siguientes gráficos muestran el tamaño del buffer en los distintos nodos d
 | ![](graficos/Parte1-Caso1-NodeTxQueue.png) | ![](graficos/Parte1-Caso1-NetworkQueue.png) | ![](graficos/Parte1-Caso1-NodeRxQueue.png) |
 
 En este caso, el link de NodeTxQueue a NetworkQueue tiene un datarate de 1Mbps, al igual que el link de NetworkQueue a NodeRxQueue.
-El link de NodeRxQueue a Sink tiene un datarate de 0,5Mbps.
+El link de NodeRxQueue a Sink tiene un datarate de 0.5Mbps.
 
-Un paquete de 12500B tarda 0,1s en enviarse por un medio de 1Mbps y 0,2s por uno de 0,5Mbps. Esto explica por qué en el caso donde generamos un paquete cada 0,1s, el link de la NodeRxQueue a Sink se satura, ya que le llegan paquetes al doble de la velocidad en que los puede despachar. Los otros links no tienen problema, ya que despachan paquetes cada 0,1s entonces pueden manejar un tiempo de generación de un paquete cada 0,1s o más. Así determinamos que **el cuello de botella se encuentra en el link NodeRxQueue a Sink**.
+Un paquete de 12500B tarda 0.1s en enviarse por un medio de 1Mbps y 0.2s por uno de 0.5Mbps. Esto explica por qué en el caso donde generamos un paquete cada 0.1s, el link de la NodeRxQueue a Sink se satura, ya que le llegan paquetes al doble de la velocidad en que los puede despachar. Los otros links no tienen problema, ya que despachan paquetes cada 0.1s entonces pueden manejar un tiempo de generación de un paquete cada 0.1s o más. Así determinamos que **el cuello de botella se encuentra en el link NodeRxQueue a Sink**.
 
-Cuando enviamos cada 0,2s o más (lo que representa _menos_ paquetes por segundo), el cuello de botella desaparece, ya que el link más lento (0,5Mbps) puede despachar los paquetes a una velocidad mayor a la que le llegan.
+Cuando enviamos cada 0.2s o más (lo que representa _menos_ paquetes por segundo), el cuello de botella desaparece, ya que el link más lento (0.5Mbps) puede despachar los paquetes a una velocidad mayor a la que le llegan.
 
-En el caso de generar un paquete cada 0,1s, el tamaño del búffer del NodeTxQueue va variando sin llegar a llenarse. Esto es porque no generamos un paquete cada 0,1s exactamente, sino que hay un poco de aleatoriedad en ese número, entonces a veces mandamos un poco más rápido de lo que los puede procesar (y por lo tanto tienen que esperar en la cola, causando las subidas en el gráfico) y a veces un poco más lento (causando las bajadas).
+En el caso de generar un paquete cada 0.1s, el tamaño del búffer del NodeTxQueue va variando sin llegar a llenarse. Esto es porque no generamos un paquete cada 0.1s exactamente, sino que hay un poco de aleatoriedad en ese número, entonces a veces mandamos un poco más rápido de lo que los puede procesar (y por lo tanto tienen que esperar en la cola, causando las subidas en el gráfico) y a veces un poco más lento (causando las bajadas).
 
 Por el análisis realizado, concluimos que este caso es un problema de **congestión en el receptor**, por lo que se solucionará en la parte 2 con un algoritmo de **control de flujo**.
 
@@ -83,7 +84,7 @@ Por el análisis realizado, concluimos que este caso es un problema de **congest
 | ![](graficos/Parte1-Caso2-NodeTxQueue.png) | ![](graficos/Parte1-Caso2-NetworkQueue.png) | ![](graficos/Parte1-Caso2-NodeRxQueue.png) |
 
 En este caso, el link de NodeTxQueue a NetworkQueue tiene un datarate de 1Mbps, al igual que el link de NodeRxQueue a Sink.
-El link de NetworkQueue a NodeRxQueue tiene un datarate de 0,5Mbps.
+El link de NetworkQueue a NodeRxQueue tiene un datarate de 0.5Mbps.
 
 La descripción del problema de este caso es la misma que para el caso 1, pero con **el cuello de botella en el link de NetworkQueue a NodeRxQueue** pues este es el enlace con menor capacidad de envío en la red y por consecuencia el que se satura. Por esta razón es que la red, es decir la _NetworkQueue_ es lo que se llena, en lugar de la _NodeRxQueue_ (caso 1).
 
@@ -177,9 +178,9 @@ Al igual que en la primera parte, comenzaremos graficando el uso de los buffers 
 
 Aquí se ve claramente como el nodo transmisor regula la cantidad de paquetes que mete a la red, y por lo tanto su buffer de envío se llena a medida que va recibiendo paquetes, pues no siempre los está mandando al mismo ritmo.
 
-Tambien se puede ver que a diferencia de [el caso 1 de la parte 1](#caso-1-congestión-en-el-receptor), cuando el buffer del receptor se está por llenar, el transmisor lo sabe gracias a nuestro [algoritmo de control de flujo](#control-de-flujo) y _no permite_ que esto suceda, pues nunca va a mandar más paquetes de los que la ventana del receptor le permite, esto se ve en la siguiente imagen que es un zoom-in de el gráfico para NodeRx.
-
-<img src="graficos/Parte2-Caso1-NodeRxBuffer-Zoom.png" alt="p2c1Rx" width="200"/>
+|           Observación     |      Zoom-In del NodeRx     |
+| ----------------------------------- | ----------------------------------- |
+| Tambien se puede ver que a diferencia de [el caso 1 de la parte 1](#caso-1-congestión-en-el-receptor), cuando el buffer del receptor se está por llenar, el transmisor lo sabe gracias a nuestro [algoritmo de control de flujo](#control-de-flujo) y _no permite_ que esto suceda, pues nunca va a mandar más paquetes de los que la ventana del receptor le permite, esto se ve en la imagen de la derecha que es un zoom-in de el gráfico para NodeRx, cuando llega y frena antes del valor 200. | ![](graficos/Parte2-Caso1-NodeRxBuffer-Zoom.png) |
 
 De esta manera logramos que siempre haya paquetes siendo enviados por el enlace más debil, y que nunca se sature un buffer.
 
@@ -213,8 +214,30 @@ La diferencia entre el segundo y tercer gráfico, es que **cuando el problema de
 
 \* cuando hacemos referencia a gráficos anteriores, se deben observar aquellos que representen un intervalo de generación de ~0.1 segundos pues este es el caso más interesante para el análisis actual.
 
+### Delay entre Generador y Sink
+Este gráfico representa los valores promedio de delay obtenidos luego de simulaciones de 200 segundos. En el eje x se encuentra la cantidad de paquetes enviados por segundo, y en el eje y el valor de delay promedio obtenido.
+
+|     Ambos casos de ambas partes     |
+| ----------------------------------- |
+| ![](graficos/Delay-vs-Enviados.png) |
+
+En este gráfico se pueden observar tres intervalos importantes en la cantidad de paquetes enviados:
+- Intervalo 1..5: aquí todos los casos son iguales pues la red no sufre de problemas de congestión. Esto es porque la cantidad de paquetes generados es menor a la capacidad máxima y por lo tanto los algoritmos de la parte 2 no tienen efecto.
+- Intervalo 5..10: a partir de 5pkts/s se alcanza la capacidad de transmisión máxima de la red, lo que significa que algunos paquetes deben esperar en colas y por lo tanto empiezan a tener mucho más retardo. Ahora bien, también notamos una diferencia entre la parte 1 y la parte 2 (los casos dentro de cada parte son indiferenciables). Esta diferencia se debe a que en la parte 1 muchos paquetes se pierden y por lo tanto no contribuyen al retardo promedio. En cambio, en la parte 2, debido al control de congestión y al control de flujo, muchos paquetes tienen que esperar un tiempo extra antes de ser transmitidos, y por lo tanto llegan con más retardo.
+- Intervalo 10..: las curvas de la parte 2 siguen las misma tendencia, mientras que las de la parte 1 muestran un cambio: a partir de 10pkts/s, la generación de paquetes supera la capacidad de envío del transmisor (NodeTx), entonces su cola se empieza a llenar (de leche) y por lo tanto los paquetes generados tienen que esperar cada vez más para salir del transmisor. Sigue habiendo una pequeña diferencia entre la parte 1 y la parte 2 debido a lo mencionado anteriormente sobre los controles de congestión y de flujo.
+
+### Carga Ofrecida contra Carga Util
+El siguiente gráfico muestra la cantidad de paquetes generados por segundo en el eje x, y la cantidad de paquetes recibidos por segundo en el eje y. Se corrieron varias simulaciones _(cada punto del gráfico representa una de ellas)_ para cada parte y caso del laboratorio.
+
+|         Ambos casos de ambas partes          |
+| -------------------------------------------- |
+| ![](graficos/CargaOfrecida-vs-CargaUtil.png) |
+
+Como se puede observar, no hubo cambios en cuanto a la relación entre paquetes generados y recibidos entre la parte 1 y 2, debido a que en todos los casos se logra un aprovechamiento máximo de la red. Esto significa que nuestros algoritmos de confiabilidad, control de flujo y control de congestión _no tuvieron_ un costo notable en el desempeño de la red, aun logrando garantizar que no se pierdan paquetes y que por consecuenia _todos ellos lleguen en el orden que fueron generados_.
+
 ## Conclusiones
 
 
+
 ## Posibles Mejoras
-- Enviar periódicamente el windowStart
+- En la implementación actual del control de flujo, existe la posibilidad de que ocurra un deadlock. Esto se podría resolver haciendo que el emisor le pregunte periódicamente al receptor si se liberó algún buffer. Por simplicidad, no lo resolvemos.
