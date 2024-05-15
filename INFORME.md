@@ -28,7 +28,8 @@
 El objetivo de este laboratorio era analizar los datos de una red y proveer algoritmos de control de flujo y congestión para mejorar el desempeño de la misma. Este informe explica en detalle cada parte del laboratorio, junto con el análisis correspondiente y nuestras conclusiones finales.
 
 ## Definiciones
-Haremos referencia a las siguientes definiciones a lo largo del informe.
+Haremos referencia a las siguientes definiciones a lo largo del informe:
+
 - **Transmisor:** Este término hará referencia al nodo que **envía** los paquetes de **datos**.
 - **Receptor:** Este término hará referencia al nodo que **recibe** los paquetes de **datos**.
 - **Buffer:** Estructura de datos que puede almacenar información.
@@ -48,7 +49,8 @@ La red que utilizamos para el análisis de esta parte está descrita por los sig
 
 Cada arista del gráfico es un link o enlace que tendrá su propia velocidad de transmisión, y cada "cuadradito" de la network es un nodo.
 
-Las queues utilizadas son lo que llamaremos buffers. Cuando llega un paquete a un buffer se pueden dar dos situaciones: 
+Las queues utilizadas son lo que llamaremos buffers. Cuando llega un paquete a un buffer se pueden dar dos situaciones:
+
 - Si el buffer tiene espacio, **almacena** la información que recibe hasta poder enviarla.
 - Si no, **dropea** el paquete recibido causando una **perdida** del mismo pues _desaparece de la red_ ya que no hay nadie que se encargue de retransmitirlo.
 
@@ -104,11 +106,13 @@ Los paquetes de datos harán el recorrido ````Gen -> TraTx -> Queue0 -> TraRx ->
 En esta parte, agregamos paquetes de **feedback** que serán útiles en la implementación de nuestros algoritmos de control de flujo y congestión. Estos harán el recorrido ````TraRx -> Queue1 -> TraTx````.
 
 En esta parte, los 'buffers' de la network serán:
+
 - TraTx : Almacena información que recibe del generador para enviarla a la red cuando lo considere oportuno. Tambíen recibe los paquetes de feedback.
 - Queue0 : Representa una 'red' con capacidad limitada.
 - TraRx : Almacena información que recibe del la 'red' para enviarla al Sink o 'capa de aplicación'. Se encarga de envíar los paquetes de feedback.
 
 Cuando llega un paquete a un buffer se pueden dar dos situaciones: 
+
 - Si el buffer tiene espacio, **almacena** la información que recibe hasta poder enviarla.
 - Si no, **dropea** el paquete recibido, pero a diferencia de la parte 1, esto **NO CAUSA** una **perdida** del mismo pues _sigue existiendo en la red_ y será retransmitido. Esto es gracias a los algoritmos que implementamos y describiremos a continuación.
 
@@ -127,11 +131,13 @@ Para esta parte agregamos un campo ````seqNumber```` a los paquetes transmitidos
 Tambien utilizamos los mensajes de tipo ````FeedbackPkt```` los cuales contienen un ACK (en el campo ````ackNumber````) con el número de secuencia del paquete del que confirman su recepción y también un campo ````windowStart````, que representa el último numero de secuencia ya recibido y entregado a la capa de aplicación.
 
 Nuestro algoritmo es similar a _Selective Repeat_. El transmisor (traTx) tiene una ventana de salida, donde se podrán encontrar paquetes en los siguientes estados:
+
 - Listos para ser enviados.
 - Enviados y aún no confirmados.
 - Enviados y confirmados fuera de orden.
 
 El receptor (traRx) tiene una ventana de entrada con paquetes en los siguientes estados:
+
 - Recibidos y aún no enviados al sink.
 - No recibidos
 
@@ -140,6 +146,7 @@ Para confirmar la recepción de un paquete de datos, el receptor envía un Feedb
 >\>$ alias reconocido="ackeado"
 
 Acciones del TRANSMISOR (````traTx````): 
+
 - Cuando **recibe un paquete del generador**, le asigna un ````seqNumber```` y lo almacena en su buffer hasta que su ventana le permita enviarlo.
 
 - Cuando **termina de transmitir cada paquete**, intenta enviar el siguiente, que será el primer paquete que esté "listo para ser enviado" en la ventana. Si no puede, simplemente espera hasta que la ventana de envío lo permita.
@@ -151,6 +158,7 @@ Acciones del TRANSMISOR (````traTx````):
 
 ### Control de Flujo
 Nuestro algoritmo de control de flujo se puede caracterizar de la siguiente forma:
+
 - **Transmisor y receptor** deben tener el **mismo tamaño de ventana**. En este caso está hardcodeado en omnetpp.ini, pero se podría implementar para que se negocie en un handshake inicial.
 - El receptor envía en el campo ````windowStart```` de cada FeedbackPkt el último paquete enviado al sink, es decir, informa al transmisor sobre cuál es el primer paquete en su ventana.
 - El transmisor se encarga de no llenar el búfer del receptor, sabiendo que solo puede enviar paquetes con numeros de secuencia menores o iguales que el valor ````windowStart + windowSize````.
@@ -158,6 +166,7 @@ Nuestro algoritmo de control de flujo se puede caracterizar de la siguiente form
 
 ### Control de Congestión
 Nuestro transmisor implementa un algoritmo análogo a **TCP Tahoe**. Para esto, el transmisor tiene una ventana de congestión ````cwnd```` que dice la cantidad de paquetes que puede haber en la red:
+
 - Empieza en **Slow Start(*)** hasta llegar al threshold ````ssthresh````.
 - Al salir de Slow Start, entra en **Additive Increase(*)**.
 - Cuando hay un timeout, el threshold se reduce a la mitad de la ventana de congestión actual, la ventana de congestión se establece en 1 y empieza de vuelta Slow Start.
@@ -219,6 +228,7 @@ Este gráfico representa los valores promedio de delay obtenidos luego de simula
 | ![](graficos/Delay-vs-Enviados.png) |
 
 En este gráfico se pueden observar **tres intervalos importantes** en la cantidad de paquetes enviados:
+
 - **Intervalo 1..5:** aquí todos los casos son iguales pues la red no sufre de problemas de congestión. Esto es porque la cantidad de paquetes generados es menor a la capacidad máxima de la red (_5pkts/s_) y por lo tanto los algoritmos de la parte 2 no tienen efecto.
 - **Intervalo 5..10:** a partir de 5pkts/s se alcanza la capacidad de transmisión máxima de la red, lo que significa que algunos paquetes deben esperar en colas y por lo tanto empiezan a tener mucho más retardo. Ahora bien, también notamos una diferencia entre la parte 1 y la parte 2 (los casos dentro de cada parte son indiferenciables). Esta diferencia se debe a que en la parte 1 muchos paquetes se pierden y por lo tanto no contribuyen al retardo promedio. En cambio, en la parte 2, debido al control de congestión y al control de flujo, muchos paquetes tienen que esperar un tiempo extra antes de ser transmitidos, y por lo tanto llegan con más retardo.
 - **Intervalo 10..:** las curvas de la parte 2 siguen las misma tendencia, mientras que las de la parte 1 muestran un cambio: a partir de 10pkts/s, la generación de paquetes supera la capacidad de envío del transmisor (NodeTx), entonces su cola se empieza a llenar (de leche) y por lo tanto los paquetes generados tienen que esperar cada vez más para salir del transmisor. Sigue habiendo una pequeña diferencia entre la parte 1 y la parte 2 debido a lo mencionado anteriormente sobre los controles de congestión y de flujo.
