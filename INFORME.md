@@ -2,9 +2,9 @@
 
 ### Integrantes del grupo:
 ```` 
-    char* apellidos[] = {"Achával", "Maraschio", "Peyronel"};
-    for (char* apellido : apellidos)
-          printf("Tomás %s\n", apellido);
+    std::string apellidos[] = {"Achával", "Maraschio", "Peyronel"};
+    for (std::string apellido : apellidos)
+          std::cout << "Tomás " << apellido << std::endl;
 ````
 
 ## Indice
@@ -218,10 +218,10 @@ Este gráfico representa los valores promedio de delay obtenidos luego de simula
 | ----------------------------------- |
 | ![](graficos/Delay-vs-Enviados.png) |
 
-En este gráfico se pueden observar tres intervalos importantes en la cantidad de paquetes enviados:
-- Intervalo 1..5: aquí todos los casos son iguales pues la red no sufre de problemas de congestión. Esto es porque la cantidad de paquetes generados es menor a la capacidad máxima y por lo tanto los algoritmos de la parte 2 no tienen efecto.
-- Intervalo 5..10: a partir de 5pkts/s se alcanza la capacidad de transmisión máxima de la red, lo que significa que algunos paquetes deben esperar en colas y por lo tanto empiezan a tener mucho más retardo. Ahora bien, también notamos una diferencia entre la parte 1 y la parte 2 (los casos dentro de cada parte son indiferenciables). Esta diferencia se debe a que en la parte 1 muchos paquetes se pierden y por lo tanto no contribuyen al retardo promedio. En cambio, en la parte 2, debido al control de congestión y al control de flujo, muchos paquetes tienen que esperar un tiempo extra antes de ser transmitidos, y por lo tanto llegan con más retardo.
-- Intervalo 10..: las curvas de la parte 2 siguen las misma tendencia, mientras que las de la parte 1 muestran un cambio: a partir de 10pkts/s, la generación de paquetes supera la capacidad de envío del transmisor (NodeTx), entonces su cola se empieza a llenar (de leche) y por lo tanto los paquetes generados tienen que esperar cada vez más para salir del transmisor. Sigue habiendo una pequeña diferencia entre la parte 1 y la parte 2 debido a lo mencionado anteriormente sobre los controles de congestión y de flujo.
+En este gráfico se pueden observar **tres intervalos importantes** en la cantidad de paquetes enviados:
+- **Intervalo 1..5:** aquí todos los casos son iguales pues la red no sufre de problemas de congestión. Esto es porque la cantidad de paquetes generados es menor a la capacidad máxima de la red (_5pkts/s_) y por lo tanto los algoritmos de la parte 2 no tienen efecto.
+- **Intervalo 5..10:** a partir de 5pkts/s se alcanza la capacidad de transmisión máxima de la red, lo que significa que algunos paquetes deben esperar en colas y por lo tanto empiezan a tener mucho más retardo. Ahora bien, también notamos una diferencia entre la parte 1 y la parte 2 (los casos dentro de cada parte son indiferenciables). Esta diferencia se debe a que en la parte 1 muchos paquetes se pierden y por lo tanto no contribuyen al retardo promedio. En cambio, en la parte 2, debido al control de congestión y al control de flujo, muchos paquetes tienen que esperar un tiempo extra antes de ser transmitidos, y por lo tanto llegan con más retardo.
+- **Intervalo 10..:** las curvas de la parte 2 siguen las misma tendencia, mientras que las de la parte 1 muestran un cambio: a partir de 10pkts/s, la generación de paquetes supera la capacidad de envío del transmisor (NodeTx), entonces su cola se empieza a llenar (de leche) y por lo tanto los paquetes generados tienen que esperar cada vez más para salir del transmisor. Sigue habiendo una pequeña diferencia entre la parte 1 y la parte 2 debido a lo mencionado anteriormente sobre los controles de congestión y de flujo.
 
 ### Carga Ofrecida contra Carga Util
 El siguiente gráfico muestra la cantidad de paquetes generados por segundo en el eje x, y la cantidad de paquetes recibidos por segundo en el eje y. Se corrieron varias simulaciones _(cada punto del gráfico representa una de ellas)_ para cada parte y caso del laboratorio.
