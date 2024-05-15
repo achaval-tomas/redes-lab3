@@ -12,7 +12,6 @@
 * [Definiciones](#definiciones)
 * [Parte 1](#parte-1)
     * [Descripción de la red](#descripción-de-la-red-de-la-parte-1)
-    <!--* [Implementación](#implementación-de-la-parte-1) -->
     * [Analisis](#análisis-de-la-parte-1)
 * [Parte 2](#parte-2)
     * [Descripción de la red](#descripción-de-la-red-de-la-parte-2) 
@@ -22,8 +21,8 @@
     * [Control de Congestión](#control-de-congestión)
     * [Analisis](#análisis-de-la-parte-2)
 * [Comparaciones](#comparaciones)
-* [Conclusiones](#conclusiones)
-* [Posibles Mejoras](#posibles-mejoras)
+* [Conclusiones](#conclusiones-del-laboratorio)
+* [Algunas Observaciones](#algunas-observaciones)
 
 ## Introducción
 El objetivo de este laboratorio era analizar los datos de una red y proveer algoritmos de control de flujo y congestión para mejorar el desempeño de la misma. Este informe explica en detalle cada parte del laboratorio, junto con el análisis correspondiente y nuestras conclusiones finales.
@@ -38,8 +37,6 @@ Haremos referencia a las siguientes definiciones a lo largo del informe.
 * **Paquete perdido:** Consideramos que un paquete fue _perdido_ cuando _**deja de existir en la red antes de llegar a su destino**_.
 
 ## Parte 1
-
-<!-- ### Implementación de la parte 1 -->
 
 ### Descripción de la red de la parte 1
 
@@ -235,9 +232,17 @@ El siguiente gráfico muestra la cantidad de paquetes generados por segundo en e
 
 Como se puede observar, no hubo cambios en cuanto a la relación entre paquetes generados y recibidos entre la parte 1 y 2, debido a que en todos los casos se logra un aprovechamiento máximo de la red. Esto significa que nuestros algoritmos de confiabilidad, control de flujo y control de congestión _no tuvieron_ un costo notable en el desempeño de la red, aun logrando garantizar que no se pierdan paquetes y que por consecuenia _todos ellos lleguen en el orden que fueron generados_.
 
-## Conclusiones
+### Paquetes Perdidos
+En la parte 1 del laboratorio, por más de que la cantidad de paquetes entregados sea la misma que en la parte 2, muchos paquetes son perdidos en el proceso. Esto ocurre debido a que el nodo mas débil de la red se congestiona pero nunca deja de recibir paquetes, por lo tanto los debe rechazar y eliminar o "droppear".
 
+Como se vió a lo largo del informe, en la parte 2 logramos evitar por completo la pérdida de paquetes, pues los mismos _no se introducen a la red_ cuando existe algún riesgo de ser perdidos.
 
+## Conclusiones del laboratorio
+- Logramos **controlar la congestión, evitando la pérdida de datos y brindando confiabilidad** en una red simple, con un protocolo que combina varias de las cosas vistas en el teórico.
+- El uso del protocolo creado _no generó un **overhead** notable_, al menos en esta red.
+- Una parte muy importante en el desarrollo de protocolos es el **_análisis de los resultados_**. De esta forma podemos determinar los puntos fuertes del algoritmo desarrollado. En este lab, dicho análisis nos llevó casi el mismo tiempo que la parte de desarrollo.
+- **"Del dicho al hecho hay mucho trecho"**. Es decir, a veces cuando estudiamos en el teórico las diferentes formas de resolver una problemática, pueden llegar a parecer algo "sencillas". Sin embargo, al ponernos manos a la obra e intentar plasmar nuestros conocimientos en la realidad, nos dimos cuenta de que hay muchos detalles de implementación que en un primer momento pasamos por alto.
 
-## Posibles Mejoras
+## Algunas Observaciones
 - En la implementación actual del control de flujo, existe la posibilidad de que ocurra un deadlock. Esto se podría resolver haciendo que el emisor le pregunte periódicamente al receptor si se liberó algún buffer. Por simplicidad, no lo resolvemos.
+- Estaría bueno testear nuestro algoritmo en una red donde los paquetes de feedback viajen por el mismo lugar que los paquetes de datos.
