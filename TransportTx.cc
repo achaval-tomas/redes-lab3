@@ -47,6 +47,8 @@ private:
     simtime_t estimatedRttStdDev = 0.0;
     simtime_t timeoutTime = 3;
 
+    cOutVector RttVector;
+
     cOutVector sentPacketsVector;
     unsigned int sentPackets = 0;
 
@@ -90,6 +92,8 @@ void TransportTx::initialize() {
     cwndVector.record(cwnd);
     ssthreshVector.record(ssthresh);
     timeoutTimeVector.record(timeoutTime);
+    RttVector.setName("estimatedRTT");
+    RttVector.record(estimatedRtt);
     sentPacketsVector.setName("SentPackets");
     sentPackets = 0;
     bufferSizeVector.setName("BufferSize");
@@ -263,6 +267,7 @@ void TransportTx::handleFeedbackPacket(FeedbackPkt* feedbackPkt) {
 
         auto measuredRtt = simTime() - pkt.sendTimestamp;
         estimatedRtt = ALPHA * estimatedRtt + (1.0 - ALPHA) * measuredRtt;
+        RttVector.record(estimatedRtt);
         auto diff = measuredRtt - estimatedRtt;
         if (diff < 0)
             diff = -diff;

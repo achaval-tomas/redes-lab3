@@ -165,6 +165,9 @@ Nuestro algoritmo de control de flujo se puede caracterizar de la siguiente form
 
 
 ### Control de Congestión
+
+A diferencia del algoritmo de control de flujo, aquí no recibimos información sobre el estado de un buffer, pues la congestión que tratamos de resolver se encuentra en la red. Por esta razón decidimos utilizar el **algoritmo de Jacobson** visto en el teórico para **_estimar_** el estado de la red a partir de mediciones del tiempo que pasa entre que un paquete es enviado y la recepción de su feedback (_RTT_). Conociendo este valor, podemos calcular un tiempo de **timeout** apropiado para cada paquete. Si pasa más tiempo que el timeout estimado para recibir el feedback de un paquete, se asume que aumentó la congestión en la red y actúa el algoritmo expliado a continuación.
+
 Nuestro transmisor implementa un algoritmo análogo a **TCP Tahoe**. Para esto, el transmisor tiene una ventana de congestión ````cwnd```` que dice la cantidad de paquetes que puede haber en la red:
 
 - Empieza en **Slow Start(*)** hasta llegar al threshold ````ssthresh````.
@@ -202,6 +205,22 @@ En este caso, actúa nuestro [algoritmo de control de congestión](#control-de-c
 
 En el caso 1, se saturaba el receptor y su buffer se mantenía casi lleno. En el caso 2, se satura la red pero su buffer no se mantiene "casi lleno", es más, ¡ni siquiera se acerca a ello! Esto sucede porque a diferencia del caso 1 donde podemos conocer la posición de la ventana actual del receptor y mantenerla casi llena, nos basamos en aproximar el valor de un RTT (round trip time) para estimar el estado de congestión de la red. Como el timeout de un paquete ocurre si este se mantiene más tiempo del que deseamos encolado en un buffer (_es decir, su RTT fue tan mayor al esperado que ocurrió un timeout antes de recibir su ACK_), el transmisor asume que se está sobrecargando la red e inmediatamente reduce su tasa de envío. Luego intenta darle una nueva oportunidad a la red, hasta que vuelva a ocurrir un timeout.
 
+### Estimaciones del RTT y Jacobson
+
+El siguiente gráfico muestra el valor estimado del RTT de la red (_en segundos_) durante simulaciones de 200 segundos de duración con distintos intervalos de generación de paquetes.
+
+| Caso 1 | Caso 2 |
+| ------ | ------ |
+| ![](graficos/Parte2-Caso1-EstimatedRTToverTime.png) | ![](graficos/Parte2-Caso2-EstimatedRTToverTime.png) |
+
+En el caso 1, el gráfico se aplana rápidamente pues en no hay congestión en la red y por lo tanto el tiempo que tarda el transmisor en recibir el feedback de los paquetes enviados es aproximadamente constante (_esto está ligado a la ocupación de la red, y como se puede ver [en el análisis del caso 1](#caso-1-congestión-en-el-receptor-1), no tiene variación_). Notar que mientras menos paquetes se generan por segundo, más tardamos en aproximar el estado real de la red debido a que la estimación del RTT definida en el algoritmo de Jacobson se construye a partir de las mediciones de RTT de muchos paquetes.
+
+Como se puede ver en el caso 2, el algoritmo de control de congestión actúa a la par del algoritmo de jacobson para evitar que el RTT de la red se eleve a niveles no deseados debido a que esto podría significar que se está sobrecargando algún buffer. Notar que aquí el RTT estimado varía durante la simulación pues el tiempo que pasa desde que un paquete es enviado hasta que se recibe su feedback deja de ser aproximadamente constante (_recordar que esto está ligado a la ocupación de la red, y en este caso si tiene variación como se puede ver [en el análisis del caso 2](#caso-2-congestión-en-la-red-1)._). A continuación se puede observar más en detalle como actúan estos algoritmos en conjunto para mantener la red ocupada pero sin sobrecargarla.
+
+| Jacobson en acción | Caso 2 con generationInterval = 0.1 |
+| ------------------ | ----------------------------------- |
+| Aquí se puede ver claramente cómo actúa el algoritmo de Jacobson junto al control de congestión. Ambos ejes están en segundos. En el eje horizontal se encuentra el tiempo transcurrido de la simulación, mientras que en el eje vertical se comparan el RTT estimado (_amarillo_) y el Timeout establecido (_azul_), ambos calculados por el el algoritmo de Jacobson. Como se puede observar, el Timeout se mantiene _por encima_ de las estimaciones del RTT. Esto es para evitar timeouts prematuros, pues si se sabe que la red se está congestionando, los próximos paquetes a enviar tendrán un timeout asociado que lo tendrá en cuenta. Si de todos modos ocurre un timeout, es decir, la red se está congestionando demasiado, se puede ver como ambos valores caen debido a las decisiones tomadas por el algoritmo de control de congestión. | ![](graficos/Parte2-Caso2-RTTvsTimeout.png) |
+
 
 ## Comparaciones
 
@@ -231,7 +250,7 @@ En este gráfico se pueden observar **tres intervalos importantes** en la cantid
 
 - **Intervalo 1..5:** aquí todos los casos son iguales pues la red no sufre de problemas de congestión. Esto es porque la cantidad de paquetes generados es menor a la capacidad máxima de la red (_5pkts/s_) y por lo tanto los algoritmos de la parte 2 no tienen efecto.
 - **Intervalo 5..10:** a partir de 5pkts/s se alcanza la capacidad de transmisión máxima de la red, lo que significa que algunos paquetes deben esperar en colas y por lo tanto empiezan a tener mucho más retardo. Ahora bien, también notamos una diferencia entre la parte 1 y la parte 2 (los casos dentro de cada parte son indiferenciables). Esta diferencia se debe a que en la parte 1 muchos paquetes se pierden y por lo tanto no contribuyen al retardo promedio. En cambio, en la parte 2, debido al control de congestión y al control de flujo, muchos paquetes tienen que esperar un tiempo extra antes de ser transmitidos, y por lo tanto llegan con más retardo.
-- **Intervalo 10..:** las curvas de la parte 2 siguen las misma tendencia, mientras que las de la parte 1 muestran un cambio: a partir de 10pkts/s, la generación de paquetes supera la capacidad de envío del transmisor (NodeTx), entonces su cola se empieza a llenar (de leche) y por lo tanto los paquetes generados tienen que esperar cada vez más para salir del transmisor. Sigue habiendo una pequeña diferencia entre la parte 1 y la parte 2 debido a lo mencionado anteriormente sobre los controles de congestión y de flujo.
+- **Intervalo 10..:** las curvas de la parte 2 siguen las misma tendencia, mientras que las de la parte 1 muestran un cambio: a partir de 10pkts/s, la generación de paquetes supera la capacidad de envío del transmisor (NodeTx), entonces su buffer se empieza a llenar y por lo tanto los paquetes generados tienen que esperar cada vez más para salir del transmisor. Sigue habiendo una pequeña diferencia entre la parte 1 y la parte 2 debido a lo mencionado anteriormente sobre los controles de congestión y de flujo.
 
 ### Carga Ofrecida contra Carga Util
 El siguiente gráfico muestra la cantidad de paquetes generados por segundo en el eje x, y la cantidad de paquetes recibidos por segundo en el eje y. Se corrieron varias simulaciones _(cada punto del gráfico representa una de ellas)_ para cada parte y caso del laboratorio.
