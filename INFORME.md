@@ -45,7 +45,7 @@ La red que utilizamos para el análisis de esta parte está descrita por los sig
 
 | Network | NodeTx | NodeRx |
 | ------- | ------ | ------ |
-| <img src="graficos/Parte1-Network-Setup.png" alt="p1NetSETUP" width="500"/>  | <img src="graficos/Parte1-NodeTx.png" alt="p1NodeTx" height="200"/> | <img src="graficos/Parte1-NodeRx.png" alt="p1NodeRx" height="200"/>  |
+| <img src="graficos/Parte1/Setup/Network.png" alt="p1NetSETUP" width="500"/>  | <img src="graficos/Parte1/Setup/NodeTx.png" alt="p1NodeTx" height="200"/> | <img src="graficos/Parte1/Setup/NodeRx.png" alt="p1NodeRx" height="200"/>  |
 
 Cada arista del gráfico es un link o enlace que tendrá su propia velocidad de transmisión, y cada "cuadradito" de la network es un nodo.
 
@@ -63,7 +63,7 @@ Los siguientes gráficos muestran el tamaño del buffer en los distintos nodos d
 ### Caso 1: Congestión en el receptor
 | NodeTx | Network Queue | NodeRx |
 | ------ | ------------- | ------ |
-| ![](graficos/Parte1-Caso1-NodeTxQueue.png) | ![](graficos/Parte1-Caso1-NetworkQueue.png) | ![](graficos/Parte1-Caso1-NodeRxQueue.png) |
+| ![](graficos/Parte1/Caso1/NodeTxQueue.png) | ![](graficos/Parte1/Caso1/NetworkQueue.png) | ![](graficos/Parte1/Caso1/NodeRxQueue.png) |
 
 En este caso, el link de NodeTxQueue a NetworkQueue tiene un datarate de 1Mbps, al igual que el link de NetworkQueue a NodeRxQueue.
 El link de NodeRxQueue a Sink tiene un datarate de 0.5Mbps.
@@ -80,7 +80,7 @@ Por el análisis realizado, concluimos que este caso es un problema de **congest
 ### Caso 2: Congestión en la red
 | NodeTx | Network Queue | NodeRx |
 | ------ | ------------- | ------ |
-| ![](graficos/Parte1-Caso2-NodeTxQueue.png) | ![](graficos/Parte1-Caso2-NetworkQueue.png) | ![](graficos/Parte1-Caso2-NodeRxQueue.png) |
+| ![](graficos/Parte1/Caso2/NodeTxQueue.png) | ![](graficos/Parte1/Caso2/NetworkQueue.png) | ![](graficos/Parte1/Caso2/NodeRxQueue.png) |
 
 En este caso, el link de NodeTxQueue a NetworkQueue tiene un datarate de 1Mbps, al igual que el link de NodeRxQueue a Sink.
 El link de NetworkQueue a NodeRxQueue tiene un datarate de 0.5Mbps.
@@ -97,7 +97,7 @@ La red que utilizamos para el análisis de esta parte está descrita por los sig
 
 | Network | NodeTx | NodeRx |
 | ------ | ------------- | ------ |
-| <img src="graficos/Parte2-Network-Setup.png" alt="p1NetSETUP" width="350"/>  | <img src="graficos/Parte2-NodeTx.png" alt="p1NodeTx" height="200"/> | <img src="graficos/Parte2-NodeRx.png" alt="p1NodeRx" height="200"/>  |
+| <img src="graficos/Parte2/Setup/Network.png" alt="p1NetSETUP" width="350"/>  | <img src="graficos/Parte2/Setup/NodeTx.png" alt="p1NodeTx" height="200"/> | <img src="graficos/Parte2/Setup/NodeRx.png" alt="p1NodeRx" height="200"/>  |
 
 Nuevamente, cada arista del gráfico es un link o enlace que tendrá su propia velocidad de transmisión, y cada "cuadradito" de la network es un nodo.
 
@@ -183,13 +183,13 @@ Al igual que en la primera parte, comenzaremos graficando el uso de los buffers 
 ### Caso 1: Congestión en el receptor
 | NodeTx | Network Queue | NodeRx |
 | ------ | ------------- | ------ |
-| ![](graficos/Parte2-Caso1-NodeTxBuffer.png) | ![](graficos/Parte2-Caso1-NetworkQueue.png) | ![](graficos/Parte2-Caso1-NodeRxBuffer.png) |
+| ![](graficos/Parte2/Caso1/NodeTxBuffer.png) | ![](graficos/Parte2/Caso1/NetworkQueue.png) | ![](graficos/Parte2/Caso1/NodeRxBuffer.png) |
 
 Aquí se ve claramente como el nodo transmisor regula la cantidad de paquetes que mete a la red, y por lo tanto su buffer de envío se llena a medida que va recibiendo paquetes, pues no siempre los está mandando al mismo ritmo.
 
 |           Observación     |      Zoom-In del NodeRx     |
 | ----------------------------------- | ----------------------------------- |
-| Tambien se puede ver que a diferencia de [el caso 1 de la parte 1](#caso-1-congestión-en-el-receptor), cuando el buffer del receptor se está por llenar, el transmisor lo sabe gracias a nuestro [algoritmo de control de flujo](#control-de-flujo) y _no permite_ que esto suceda, pues nunca va a mandar más paquetes de los que la ventana del receptor le permite, esto se ve en la imagen de la derecha que es un zoom-in de el gráfico para NodeRx, cuando llega y frena antes del valor 200. | ![](graficos/Parte2-Caso1-NodeRxBuffer-Zoom.png) |
+| Tambien se puede ver que a diferencia de [el caso 1 de la parte 1](#caso-1-congestión-en-el-receptor), cuando el buffer del receptor se está por llenar, el transmisor lo sabe gracias a nuestro [algoritmo de control de flujo](#control-de-flujo) y _no permite_ que esto suceda, pues nunca va a mandar más paquetes de los que la ventana del receptor le permite, esto se ve en la imagen de la derecha que es un zoom-in de el gráfico para NodeRx, cuando llega y frena antes del valor 200. | ![](graficos/Parte2/Caso1/NodeRxBuffer-Zoom.png) |
 
 De esta manera logramos que siempre haya paquetes siendo enviados por el enlace más debil, y que nunca se sature un buffer.
 
@@ -197,7 +197,7 @@ De esta manera logramos que siempre haya paquetes siendo enviados por el enlace 
 ### Caso 2: Congestión en la red
 | NodeTx | Network Queue | NodeRx |
 | ------ | ------------- | ------ |
-| ![](graficos/Parte2-Caso2-NodeTxBuffer.png) | ![](graficos/Parte2-Caso2-NetworkQueue.png) | ![](graficos/Parte2-Caso2-NodeRxBuffer.png) |
+| ![](graficos/Parte2/Caso2/NodeTxBuffer.png) | ![](graficos/Parte2/Caso2/NetworkQueue.png) | ![](graficos/Parte2/Caso2/NodeRxBuffer.png) |
 
 Al igual que en el caso anterior, se puede ver que la ocupación del buffer del NodeTx crece linealmente a medida que regula el ritmo con el que introduce paquetes a la red.
 
@@ -211,7 +211,7 @@ El siguiente gráfico muestra el valor estimado del RTT de la red (_en segundos_
 
 | Caso 1 | Caso 2 |
 | ------ | ------ |
-| ![](graficos/Parte2-Caso1-EstimatedRTToverTime.png) | ![](graficos/Parte2-Caso2-EstimatedRTToverTime.png) |
+| ![](graficos/Parte2/Caso1/EstimatedRTToverTime.png) | ![](graficos/Parte2/Caso2/EstimatedRTToverTime.png) |
 
 En el caso 1, el gráfico se aplana rápidamente pues no hay congestión en la red y por lo tanto el tiempo que tarda el transmisor en recibir el feedback de los paquetes enviados es aproximadamente constante (_esto está ligado a la ocupación de la red, y como se puede ver [en el análisis del caso 1](#caso-1-congestión-en-el-receptor-1), no tiene variación_). Notar que mientras menos paquetes se generan por segundo, más tardamos en aproximar el estado real de la red debido a que la estimación del RTT definida en el algoritmo de Jacobson se construye a partir de las mediciones de RTT de muchos paquetes.
 
@@ -219,7 +219,7 @@ Como se puede ver en el caso 2, el algoritmo de control de congestión actúa a 
 
 | Jacobson en acción | Caso 2 con generationInterval = 0.1 |
 | ------------------ | ----------------------------------- |
-| Aquí se puede ver claramente cómo actúa el algoritmo de Jacobson junto al control de congestión. Ambos ejes están en segundos. En el eje horizontal se encuentra el tiempo transcurrido de la simulación, mientras que en el eje vertical se comparan el RTT estimado (_amarillo_) y el Timeout establecido (_azul_), ambos calculados por el el algoritmo de Jacobson. Como se puede observar, el Timeout se mantiene _por encima_ de las estimaciones del RTT. Esto es para evitar timeouts prematuros, pues si se sabe que la red se está congestionando, los próximos paquetes a enviar tendrán un timeout asociado que lo tendrá en cuenta. Si de todos modos ocurre un timeout, es decir, la red se está congestionando demasiado, se puede ver como ambos valores caen debido a las decisiones tomadas por el algoritmo de control de congestión. | ![](graficos/Parte2-Caso2-RTTvsTimeout.png) |
+| Aquí se puede ver claramente cómo actúa el algoritmo de Jacobson junto al control de congestión. Ambos ejes están en segundos. En el eje horizontal se encuentra el tiempo transcurrido de la simulación, mientras que en el eje vertical se comparan el RTT estimado (_amarillo_) y el Timeout establecido (_azul_), ambos calculados por el el algoritmo de Jacobson. Como se puede observar, el Timeout se mantiene _por encima_ de las estimaciones del RTT. Esto es para evitar timeouts prematuros, pues si se sabe que la red se está congestionando, los próximos paquetes a enviar tendrán un timeout asociado que lo tendrá en cuenta. Si de todos modos ocurre un timeout, es decir, la red se está congestionando demasiado, se puede ver como ambos valores caen debido a las decisiones tomadas por el algoritmo de control de congestión. | ![](graficos/Parte2/Caso2/RTTvsTimeout.png) |
 
 
 ## Comparaciones
@@ -229,7 +229,7 @@ Uno de los gráficos más interesantes que obtuvimos es el que compara paquetes 
 
 | Parte 1 (ambos casos) | Parte 2 Caso 1 (congestión en el receptor) | Parte 2 Caso 2 (congestión en la red) |
 | --------------------- | ------------------------------------------ | ------------------------------------- |
-| ![](graficos/Parte1-Caso1y2-GenSentRec.png) | ![](graficos/Parte2-Caso1-GenSentRec.png) | ![](graficos/Parte2-Caso2-GenSentRec.png) |
+| ![](graficos/Comparaciones/Parte1-Caso1y2-GenSentRec.png) | ![](graficos/Comparaciones/Parte2-Caso1-GenSentRec.png) | ![](graficos/Comparaciones/Parte2-Caso2-GenSentRec.png) |
 
 En la parte 1, como no hay ningún tipo de control, los paquetes que se introducen a la red son los mismos que los generados y por lo tanto se congestiona algún buffer, pues la red no es capaz de manejar esa cantidad de paquetes a la vez. Podemos comprobar con el gráfico de esta parte que el límite de la red es efectivamente transmitir ~1000 paquetes en 200seg, pues uno de los enlaces tan solo puede enviar datos a 0.5Mbps = 5 paquetes por segundo (12500B = 0.1Mb por paquete) y, como siempre le llegarán de más, su utilización se mantiene al máximo.
 
@@ -244,7 +244,7 @@ Este gráfico representa los valores promedio de delay obtenidos luego de simula
 
 |     Ambos casos de ambas partes     |
 | ----------------------------------- |
-| ![](graficos/Delay-vs-Enviados.png) |
+| ![](graficos/Comparaciones/Delay-vs-Enviados.png) |
 
 En este gráfico se pueden observar **tres intervalos importantes** en la cantidad de paquetes enviados:
 
@@ -257,7 +257,7 @@ El siguiente gráfico muestra la cantidad de paquetes generados por segundo en e
 
 |         Ambos casos de ambas partes          |
 | -------------------------------------------- |
-| ![](graficos/CargaOfrecida-vs-CargaUtil.png) |
+| ![](graficos/Comparaciones/CargaOfrecida-vs-CargaUtil.png) |
 
 Como se puede observar, no hubo cambios en cuanto a la relación entre paquetes generados y recibidos entre la parte 1 y 2, debido a que en todos los casos se logra un aprovechamiento máximo de la red. Esto significa que nuestros algoritmos de confiabilidad, control de flujo y control de congestión _no tuvieron_ un costo notable en el desempeño de la red, aun logrando garantizar que no se pierdan paquetes y que por consecuenia _todos ellos lleguen en el orden que fueron generados_.
 
