@@ -124,7 +124,6 @@ Como queue1 siempre tiene transmisión instantanea y sólo recibirá paquetes de
 - Controlar la congestión de la red, es decir, evitar enviar a 'queue0' más de lo que puede recibir (algoritmo de control de congestión).
 - Controlar la congestión del receptor, es decir, evitar que al mismo le lleguen paquetes más rápido de lo que los puede procesar (algoritmo de control de flujo).
 
-
 ### Entrega confiable
 
 Para esta parte agregamos un campo ````seqNumber```` a los paquetes transmitidos, de esta forma el receptor nos podrá confirmar cada paquete que recibe individualmente.
